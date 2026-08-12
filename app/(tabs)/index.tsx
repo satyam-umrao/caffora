@@ -115,16 +115,233 @@ export default function HomeScreen() {
   };
 
   //============ filter cafe==========
-  
-// home 
+
+  // home 
 
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Caffora Home</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* ===================LOCATION HEADER ===============*/}
+
+        <View style={styles.header}>
+          {/* ===========location icon ===========*/}
+          <Ionicons
+            name="location-outline"
+            size={22}
+            color="#994418"
+            style={styles.locationIcon}
+          />
+          <Text style={styles.locationLabel}>Current Location</Text>
+          <Text style={styles.location}>{location}</Text>
+        </View>
+        <Text style={styles.title}>Caffora</Text>
+        {/* ================SEARCH BAR ================*/}
+
+        <View style={styles.searchContainer}>
+          <Ionicons
+            name="search-outline"
+            size={21}
+            color="#7C726B"
+            style={styles.searchIcon}
+          />
+
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search cafes, food, location..."
+            placeholderTextColor="#7C726B"
+          // value={searchText}
+          // onChangeText={setSearchText}
+          />
+
+          <View style={styles.filterButton}>
+            <Ionicons
+              name="options-outline"
+              size={23}
+              color="#994418"
+            />
+          </View>
+        </View>
+        {/* ============Featured Cafes============ */}
+
+        <View style={styles.featuredSection}>
+          <View style={styles.featuredHeader}>
+            <Text style={styles.sectionTitle}>Featured Cafes</Text>
+            <Text style={styles.seeAll}>See all</Text>
+          </View>
+          {/* Horizontal Cafes list */}
+          <FlatList
+            data={featuredCafes}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.featuredList}
+            ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
+            renderItem={({ item }) => (
+              <View style={styles.cafeCard}>
+
+                {/* Image */}
+                <View style={styles.imageContainer}>
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.cafeImage}
+                  />
+
+                  {/* Bookmark */}
+                  <View style={styles.bookmarkButton}>
+                    <Ionicons
+                      name="bookmark-outline"
+                      size={18}
+                      color="#786D65"
+                    />
+                  </View>
+
+                  {/* Rating */}
+                  <View style={styles.ratingBadge}>
+                    <Ionicons
+                      name="star"
+                      size={14}
+                      color="#FABB53"
+                    />
+
+                    <Text style={styles.ratingText}>
+                      {item.rating}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Card Content */}
+                <View style={styles.cardContent}>
+                  <Text
+                    style={styles.cafeName}
+                    numberOfLines={1}
+                  >
+                    {item.name}
+                  </Text>
+
+                  <View style={styles.locationRow}>
+                    <Ionicons
+                      name="location-outline"
+                      size={14}
+                      color="#7C726B"
+                    />
+
+                    <Text
+                      style={styles.cafeLocation}
+                      numberOfLines={1}
+                    >
+                      {item.location}  {item.distance}
+                    </Text>
+                  </View>
+
+                  {/* Tags */}
+                  <View style={styles.tagsRow}>
+                    {item.tags.map((tag) => (
+                      <View
+                        key={tag}
+                        style={styles.tag}
+                      >
+                        <Text style={styles.tagText}>
+                          {tag}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
+          />
+        </View>
+
+        {/*=================  Nearby Cafe ======== */}
+        <View style={styles.nearbySection}>
+          <Text style={styles.sectionTitle}>Nearby Cafés</Text>
+
+          <View style={styles.nearbyList}>
+            {nearbyCafes.map((cafe) => (
+              <View key={cafe.id} style={styles.nearbyCard}>
+
+                {/* Café Image */}
+                <Image
+                  source={{ uri: cafe.image }}
+                  style={styles.nearbyImage}
+                />
+
+                {/* Café Information */}
+                <View style={styles.nearbyContent}>
+
+                  {/* Name + Rating */}
+                  <View style={styles.nameRatingRow}>
+                    <Text
+                      style={styles.nearbyName}
+                      numberOfLines={1}
+                    >
+                      {cafe.name}
+                    </Text>
+
+                    <View style={styles.ratingSmall}>
+                      <Ionicons
+                        name="star"
+                        size={12}
+                        color="#FABB53"
+                      />
+
+                      <Text style={styles.ratingSmallText}>
+                        {cafe.rating}
+                      </Text>
+                    </View>
+                  </View>
+
+                  {/* Distance + Status + Closing */}
+                  <View style={styles.detailsRow}>
+                    <Text style={styles.distance}>
+                      {cafe.distance}
+                    </Text>
+
+                    <Text style={styles.dot}>•</Text>
+
+                    <Text style={styles.openStatus}>
+                      {cafe.status}
+                    </Text>
+
+                    <Text style={styles.dot}>•</Text>
+
+                    <Text
+                      style={styles.closingTime}
+                      numberOfLines={1}
+                    >
+                      {cafe.closingTime}
+                    </Text>
+                  </View>
+
+                  {/* Features */}
+                  <View style={styles.featuresRow}>
+                    {cafe.features.map((feature) => (
+                      <Text
+                        key={feature}
+                        style={styles.featureText}
+                      >
+                        {feature}
+                      </Text>
+                    ))}
+                  </View>
+
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+
+
+      </ScrollView>
+    </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
 
