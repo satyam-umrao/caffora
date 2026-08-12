@@ -1,10 +1,13 @@
-import { StyleSheet, Text, View, TextInput, FlatList, Image, ScrollView } from "react-native";
+import { router } from "expo-router"
+import { StyleSheet, Text, View, TextInput, FlatList, Image, ScrollView, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // npx expo install @expo/vector-icons
 import { Ionicons } from "@expo/vector-icons";
 // npx expo install expo-location
 import * as Location from "expo-location";
 import { useState, useEffect } from "react";
+
+const openFilterScreen = () => { router.push("/filters"); };
 
 //========= featured cafe data======= 
 const featuredCafes = [
@@ -156,14 +159,15 @@ export default function HomeScreen() {
           // value={searchText}
           // onChangeText={setSearchText}
           />
-
-          <View style={styles.filterButton}>
+          {/* ==========Filter================= */}
+          <Pressable style={styles.filterButton}
+          onPress={openFilterScreen}>
             <Ionicons
               name="options-outline"
               size={23}
               color="#994418"
             />
-          </View>
+          </Pressable>
         </View>
         {/* ============Featured Cafes============ */}
 
