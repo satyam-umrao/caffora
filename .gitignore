@@ -46,3 +46,6 @@ app-example
 
 # OwnerReadme
 *ownerReadme.md
+
+# Firebase Admin credentials
+scripts/*.json

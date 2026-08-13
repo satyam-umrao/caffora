@@ -1,25 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React from "react";
-import {
-  Alert,
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
+import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { logout } from "../../src/services/firebase/auth";
 import { auth } from "../../src/services/firebase/config";
 
+type ProfileItemProps = {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+  danger?: boolean;
+  isLast?: boolean;
+};
+
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const user = auth.currentUser;
 
   const name = user?.displayName || "Caffora User";
@@ -38,9 +35,11 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             await logout();
+
             router.replace("/(auth)/login");
           } catch (error) {
             console.error(error);
+
             Alert.alert("Logout failed", "Please try again.");
           }
         },
@@ -49,61 +48,170 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top"]}>
-      <View style={styles.container}>
-        {/* ================= HEADER ================= */}
-        <View style={styles.profileHeader}>
-          <Image source={{ uri: avatar }} style={styles.avatar} />
+    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="pb-[130px]"
+      >
+        {/* ================================================= */}
+        {/* HEADER */}
+        {/* ================================================= */}
 
-          <View style={styles.userDetails}>
-            <Text style={styles.userName} numberOfLines={1}>
-              {name}
-            </Text>
+        <View className="bg-[#BB5729] px-6 pb-10 pt-7">
+          {/* Top title */}
 
-            <Text style={styles.userEmail} numberOfLines={1}>
-              {email}
-            </Text>
+          <View className="mb-7 flex-row items-center justify-between">
+            <View>
+              <Text className="text-sm font-medium text-[#FBE7DA]">
+                Welcome back
+              </Text>
 
-            {user?.phoneNumber && (
-              <Text style={styles.userPhone}>{user.phoneNumber}</Text>
-            )}
+              <Text className="mt-1 text-3xl font-extrabold tracking-tight text-white">
+                Profile
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={() => router.push("/profile/settings")}
+              className="h-11 w-11 items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+            >
+              <Ionicons name="settings-outline" size={21} color="#FFFFFF" />
+            </Pressable>
+          </View>
+
+          {/* User card */}
+
+          <View className="flex-row items-center rounded-[24px] border border-white/15 bg-white/10 p-4">
+            <Image
+              source={{ uri: avatar }}
+              className="h-[76px] w-[76px] rounded-full border-[3px] border-white"
+            />
+
+            <View className="ml-4 flex-1">
+              <Text
+                className="text-[21px] font-extrabold text-white"
+                numberOfLines={1}
+              >
+                {name}
+              </Text>
+
+              <Text
+                className="mt-1 text-sm font-medium text-[#FBE7DA]"
+                numberOfLines={1}
+              >
+                {email}
+              </Text>
+
+              {user?.phoneNumber && (
+                <View className="mt-2 flex-row items-center">
+                  <Ionicons name="call-outline" size={13} color="#FBE7DA" />
+
+                  <Text className="ml-1.5 text-xs text-[#FBE7DA]">
+                    {user.phoneNumber}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <Pressable
+              onPress={() => router.push("/profile/edit")}
+              className="ml-2 h-10 w-10 items-center justify-center rounded-full bg-white active:bg-[#FBE7DA]"
+            >
+              <Ionicons name="create-outline" size={19} color="#BB5729" />
+            </Pressable>
           </View>
         </View>
 
-        {/* ================= MENU ================= */}
-        <View style={styles.menuCard}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
+        {/* ================================================= */}
+        {/* CONTENT */}
+        {/* ================================================= */}
+
+        <View className="-mt-5 rounded-t-[28px] bg-[#FAF7F3] px-5 pt-6">
+          {/* Account */}
+
+          <Text className="mb-3 ml-1 text-xs font-bold uppercase tracking-[1.5px] text-[#958A82]">
+            Account
+          </Text>
+
+          <View className="overflow-hidden rounded-[22px] border border-[#EEE8E2] bg-white">
             <ProfileItem
               icon="create-outline"
               title="Edit Profile"
+              subtitle="Update your personal information"
               onPress={() => router.push("/profile/edit")}
             />
+
             <ProfileItem
               icon="calendar-outline"
               title="Booking History"
+              subtitle="View your past and upcoming bookings"
               onPress={() => router.push("/booking/history")}
             />
+
             <ProfileItem
               icon="heart-outline"
               title="Saved Cafes"
+              subtitle="Your favorite cafes"
               onPress={() => router.push("/saved")}
+              isLast
             />
+          </View>
+
+          {/* Preferences */}
+
+          <Text className="mb-3 ml-1 mt-7 text-xs font-bold uppercase tracking-[1.5px] text-[#958A82]">
+            Preferences
+          </Text>
+
+          <View className="overflow-hidden rounded-[22px] border border-[#EEE8E2] bg-white">
             <ProfileItem
               icon="settings-outline"
               title="Settings"
+              subtitle="App preferences and account settings"
               onPress={() => router.push("/profile/settings")}
             />
+
+            <ProfileItem
+              icon="notifications-outline"
+              title="Notifications"
+              subtitle="Manage your notification preferences"
+              onPress={() => router.push("/profile/notifications")}
+            />
+
+            <ProfileItem
+              icon="shield-checkmark-outline"
+              title="Privacy"
+              subtitle="Privacy and security"
+              onPress={() => router.push("/profile/privacy")}
+              isLast
+            />
+          </View>
+
+          {/* Support */}
+
+          <Text className="mb-3 ml-1 mt-7 text-xs font-bold uppercase tracking-[1.5px] text-[#958A82]">
+            Support
+          </Text>
+
+          <View className="overflow-hidden rounded-[22px] border border-[#EEE8E2] bg-white">
             <ProfileItem
               icon="help-circle-outline"
               title="Help & Support"
+              subtitle="Need help? We're here for you"
               onPress={() => router.push("/profile/help")}
             />
+
+            <ProfileItem
+              icon="information-circle-outline"
+              title="About Caffora"
+              subtitle="Learn more about Caffora"
+              onPress={() => router.push("/profile/about")}
+            />
+
             <ProfileItem
               icon="document-text-outline"
               title="Terms & Conditions"
+              subtitle="Read our terms and policies"
               onPress={() =>
                 Alert.alert(
                   "Terms & Conditions",
@@ -112,201 +220,84 @@ export default function ProfileScreen() {
               }
               isLast
             />
-          </ScrollView>
-
-          {/* ================= LOGOUT ================= */}
-          <View
-            style={[
-              styles.logoutArea,
-              { paddingBottom: Math.max(insets.bottom + 16, 24) },
-            ]}
-          >
-            <Pressable
-              style={({ pressed }) => [
-                styles.logoutButton,
-                pressed && styles.logoutPressed,
-              ]}
-              onPress={handleLogout}
-            >
-              <Ionicons name="log-out-outline" size={20} color="#E0524D" />
-              <Text style={styles.logoutText}>Logout</Text>
-            </Pressable>
           </View>
+
+          {/* ================================================= */}
+          {/* LOGOUT */}
+          {/* ================================================= */}
+
+          <Pressable
+            onPress={handleLogout}
+            className="mt-7 h-14 flex-row items-center justify-center rounded-[18px] border border-[#F6D7D5] bg-[#FFF8F7] active:bg-[#FFF0EE]"
+          >
+            <View className="h-9 w-9 items-center justify-center rounded-full bg-[#FCE9E7]">
+              <Ionicons name="log-out-outline" size={19} color="#E0524D" />
+            </View>
+
+            <Text className="ml-3 text-[15px] font-bold text-[#E0524D]">
+              Logout
+            </Text>
+          </Pressable>
+
+          {/* Version */}
+
+          <Text className="mt-6 text-center text-xs font-medium text-[#B0A7A0]">
+            Caffora
+          </Text>
+
+          <Text className="mt-1 text-center text-[10px] text-[#C0B8B1]">
+            Your coffee. Your place.
+          </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
-/* =====================================================
-   MENU ITEM COMPONENT
-===================================================== */
-
-type ProfileItemProps = {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  onPress: () => void;
-  isLast?: boolean;
-};
+/* ========================================================= */
+/* PROFILE ITEM */
+/* ========================================================= */
 
 function ProfileItem({
   icon,
   title,
+  subtitle,
   onPress,
   isLast = false,
 }: ProfileItemProps) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.profileItem,
-        !isLast && styles.profileItemBorder,
-        pressed && styles.itemPressed,
-      ]}
+      className={`flex-row items-center px-4 py-4 active:bg-[#FAF7F3] ${
+        !isLast ? "border-b border-[#F0EBE6]" : ""
+      }`}
     >
-      <View style={styles.leftContent}>
-        <View style={styles.iconContainer}>
-          <Ionicons name={icon} size={20} color="#68635F" />
-        </View>
-        <Text style={styles.itemTitle}>{title}</Text>
+      {/* Icon */}
+
+      <View className="h-11 w-11 items-center justify-center rounded-[14px] bg-[#FAF6F2]">
+        <Ionicons name={icon} size={21} color="#BB5729" />
       </View>
-      <Ionicons name="chevron-forward" size={20} color="#C4C0BD" />
+
+      {/* Text */}
+
+      <View className="ml-4 flex-1">
+        <Text className="text-[15px] font-bold text-[#302A26]">{title}</Text>
+
+        {subtitle && (
+          <Text
+            className="mt-1 text-xs font-medium text-[#9A918A]"
+            numberOfLines={1}
+          >
+            {subtitle}
+          </Text>
+        )}
+      </View>
+
+      {/* Arrow */}
+
+      <View className="h-8 w-8 items-center justify-center rounded-full bg-[#FAF8F5]">
+        <Ionicons name="chevron-forward" size={16} color="#B6ADA6" />
+      </View>
     </Pressable>
   );
 }
-
-/* =====================================================
-   STYLES
-===================================================== */
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#BB5729", // Caffora brand orange
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#BB5729",
-  },
-
-  /* ---------- HEADER ---------- */
-  profileHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 54, // Extra bottom padding for the overlapping card
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    backgroundColor: "#E8DED7",
-  },
-  userDetails: {
-    flex: 1,
-    marginLeft: 18,
-    justifyContent: "center",
-  },
-  userName: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  userEmail: {
-    color: "#FBE7DA",
-    fontSize: 14,
-    marginTop: 6,
-    fontWeight: "500",
-  },
-  userPhone: {
-    color: "#FBE7DA",
-    fontSize: 13,
-    marginTop: 4,
-    opacity: 0.9,
-  },
-
-  /* ---------- WHITE CONTENT CARD ---------- */
-  menuCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24, // Pulls the card up over the orange background
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 24,
-  },
-
-  /* ---------- MENU ROW ---------- */
-  profileItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-  },
-  profileItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#F2EFEA",
-  },
-  leftContent: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: "#F9F8F6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  itemTitle: {
-    color: "#363331",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 16,
-  },
-  itemPressed: {
-    opacity: 0.6,
-  },
-
-  /* ---------- LOGOUT ---------- */
-  logoutArea: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    backgroundColor: "#FFFFFF",
-    borderTopWidth: 1,
-    borderTopColor: "#F2EFEA",
-  },
-  logoutButton: {
-    height: 56,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    borderColor: "#FFF0F0",
-    backgroundColor: "#FFFAFA",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  logoutPressed: {
-    backgroundColor: "#FFF0F0",
-    borderColor: "#FFE0E0",
-  },
-  logoutText: {
-    color: "#E0524D",
-    fontSize: 16,
-    fontWeight: "700",
-    marginLeft: 10,
-  },
-});
