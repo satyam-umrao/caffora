@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const COLORS = {
   background: "#F8F5F1",
@@ -170,7 +171,8 @@ export default function FiltersScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+    {/* <View style={styles.container}> */}
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.headerButton}>
@@ -392,7 +394,7 @@ export default function FiltersScreen() {
           )}
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -403,6 +405,7 @@ const styles = StyleSheet.create({
   },
 
   header: {
+    margin:5,
     height: 70,
     paddingHorizontal: 20,
     flexDirection: "row",
