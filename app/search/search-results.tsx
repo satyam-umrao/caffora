@@ -196,7 +196,7 @@ export default function SearchResultsScreen() {
         </View>
       )}
 
-      {/* Results */}
+      {/* Results*/}
       {!loading && error === "" && (
         <FlatList
           data={cafes}

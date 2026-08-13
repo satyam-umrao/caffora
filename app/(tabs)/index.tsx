@@ -22,20 +22,30 @@ import {
   getFeaturedCafes,
 } from "../../src/services/firebase/cafes";
 
+import {
+  getSavedCafeIds,
+  toggleCafeSaved,
+} from "../../src/services/firebase/favorites";
+
 export default function HomeScreen() {
   const [location, setLocation] = useState("Getting location...");
+
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [featuredCafes, setFeaturedCafes] = useState<Cafe[]>([]);
 
   const [searchText, setSearchText] = useState("");
+
   const [loading, setLoading] = useState(true);
+
   const [refreshing, setRefreshing] = useState(false);
+
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    getLocation();
-    loadCafes();
-  }, []);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
+
+  /* =====================================================
+     LOCATION
+  ===================================================== */
 
   const getLocation = async () => {
     try {
@@ -68,9 +78,14 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.log("Location error:", error);
+
       setLocation("Location unavailable");
     }
   };
+
+  /* =====================================================
+     LOAD CAFES
+  ===================================================== */
 
   const loadCafes = async () => {
     try {
@@ -93,10 +108,84 @@ export default function HomeScreen() {
     }
   };
 
+  /* =====================================================
+     LOAD SAVED CAFES
+  ===================================================== */
+
+  const loadSavedCafes = async () => {
+    try {
+      const ids = await getSavedCafeIds();
+
+      setSavedIds(ids);
+    } catch (error) {
+      console.error("Failed to load saved cafes:", error);
+    }
+  };
+
+  /* =====================================================
+     INITIAL LOAD
+  ===================================================== */
+
+  useEffect(() => {
+    getLocation();
+    loadCafes();
+    loadSavedCafes();
+  }, []);
+
+  /* =====================================================
+     REFRESH
+  ===================================================== */
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadCafes();
+
+    Promise.all([loadCafes(), loadSavedCafes()]);
   }, []);
+
+  /* =====================================================
+     SAVE / UNSAVE CAFE
+  ===================================================== */
+
+  const handleToggleSave = async (cafeId: string) => {
+    try {
+      const saved = await toggleCafeSaved(cafeId);
+
+      setSavedIds((current) => {
+        if (saved) {
+          if (current.includes(cafeId)) {
+            return current;
+          }
+
+          return [...current, cafeId];
+        }
+
+        return current.filter((id) => id !== cafeId);
+      });
+    } catch (error: any) {
+      console.error("Save cafe error:", error);
+
+      if (error?.message === "LOGIN_REQUIRED") {
+        Alert.alert("Sign in required", "Please sign in to save cafes.", [
+          {
+            text: "Cancel",
+            style: "cancel",
+          },
+          {
+            text: "Sign In",
+            onPress: () => router.push("/(auth)/login"),
+          },
+        ]);
+
+        return;
+      }
+
+      Alert.alert("Couldn't save cafe", "Please try again.");
+    }
+  };
+
+  /* =====================================================
+     SEARCH
+  ===================================================== */
 
   const filteredCafes = useMemo(() => {
     const query = searchText.trim().toLowerCase();
@@ -116,6 +205,10 @@ export default function HomeScreen() {
     });
   }, [cafes, searchText]);
 
+  /* =====================================================
+     NEARBY CAFES
+  ===================================================== */
+
   const nearbyCafes = useMemo(() => {
     return filteredCafes
       .filter(
@@ -123,6 +216,10 @@ export default function HomeScreen() {
       )
       .slice(0, 8);
   }, [filteredCafes, featuredCafes]);
+
+  /* =====================================================
+     OPEN CAFE
+  ===================================================== */
 
   const openCafe = (cafeId: string) => {
     router.push({
@@ -133,14 +230,27 @@ export default function HomeScreen() {
     });
   };
 
+  /* =====================================================
+     SEE ALL
+  ===================================================== */
+
   const handleSeeAll = () => {
     router.push("/(tabs)/search");
   };
 
+  /* =====================================================
+     RETRY
+  ===================================================== */
+
   const handleRetry = () => {
     setLoading(true);
-    loadCafes();
+
+    Promise.all([loadCafes(), loadSavedCafes()]);
   };
+
+  /* =====================================================
+     UI
+  ===================================================== */
 
   return (
     <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
@@ -157,11 +267,11 @@ export default function HomeScreen() {
           />
         }
       >
-        {/* =========================================
+        {/* =================================================
             HEADER
-        ========================================= */}
+        ================================================= */}
 
-        <View className="flex-row items-center justify-between px-5 pt-3 pb-1">
+        <View className="flex-row items-center justify-between px-5 pb-1 pt-3">
           <View className="flex-1 flex-row items-center">
             <View className="h-10 w-10 items-center justify-center rounded-[14px] bg-[#F7E5DA]">
               <Ionicons name="location" size={17} color="#B95E2E" />
@@ -191,9 +301,9 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* =========================================
+        {/* =================================================
             HERO
-        ========================================= */}
+        ================================================= */}
 
         <View className="px-5 pb-[18px] pt-[25px]">
           <Text className="mb-1.5 text-[13px] font-bold text-[#B95E2E]">
@@ -211,12 +321,12 @@ export default function HomeScreen() {
           </Text>
         </View>
 
-        {/* =========================================
+        {/* =================================================
             SEARCH
-        ========================================= */}
+        ================================================= */}
 
         <View className="mx-5 h-[65px] flex-row items-center rounded-[50px] border border-[#EDE3DC] bg-white px-3 shadow-sm">
-          <View className="h-[45px] w-[45px] items-center justify-center rounded-[50px] ">
+          <View className="h-[45px] w-[45px] items-center justify-center rounded-[50px]">
             <Ionicons name="search-outline" size={25} color="#8A7D75" />
           </View>
 
@@ -225,12 +335,12 @@ export default function HomeScreen() {
             onChangeText={setSearchText}
             placeholder="Search cafés, food, location..."
             placeholderTextColor="#9B9089"
-            className="h-full flex-1 px-2.5 text-[15px] font-semibold text-[#3027209d]"
+            className="h-full flex-1 px-2.5 text-[15px] font-semibold text-[#302720]"
             returnKeyType="search"
           />
 
           {searchText.length > 0 && (
-            <Pressable onPress={() => setSearchText("")} className="mr-1 p-1 ">
+            <Pressable onPress={() => setSearchText("")} className="mr-1 p-1">
               <Ionicons name="close-circle" size={20} color="#A99B92" />
             </Pressable>
           )}
@@ -243,9 +353,9 @@ export default function HomeScreen() {
           </Pressable>
         </View>
 
-        {/* =========================================
+        {/* =================================================
             ERROR
-        ========================================= */}
+        ================================================= */}
 
         {error.length > 0 && (
           <View className="mx-5 mt-[18px] flex-row rounded-[17px] border border-[#F2D7CA] bg-[#FFF5F1] p-[15px]">
@@ -275,9 +385,9 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* =========================================
+        {/* =================================================
             LOADING
-        ========================================= */}
+        ================================================= */}
 
         {loading ? (
           <View className="items-center justify-center py-[100px]">
@@ -289,9 +399,9 @@ export default function HomeScreen() {
           </View>
         ) : (
           <>
-            {/* =====================================
+            {/* =================================================
                 FEATURED
-            ===================================== */}
+            ================================================= */}
 
             {featuredCafes.length > 0 && (
               <View className="mt-[30px]">
@@ -326,15 +436,17 @@ export default function HomeScreen() {
                     <FeaturedCafeCard
                       cafe={item}
                       onPress={() => openCafe(item.id)}
+                      isSaved={savedIds.includes(item.id)}
+                      onToggleSave={() => handleToggleSave(item.id)}
                     />
                   )}
                 />
               </View>
             )}
 
-            {/* =====================================
+            {/* =================================================
                 SEARCH RESULTS
-            ===================================== */}
+            ================================================= */}
 
             {searchText.trim().length > 0 ? (
               <View className="mt-[30px]">
@@ -359,15 +471,17 @@ export default function HomeScreen() {
                         key={cafe.id}
                         cafe={cafe}
                         onPress={() => openCafe(cafe.id)}
+                        isSaved={savedIds.includes(cafe.id)}
+                        onToggleSave={() => handleToggleSave(cafe.id)}
                       />
                     ))}
                   </View>
                 )}
               </View>
             ) : (
-              /* ===================================
+              /* =================================================
                  EXPLORE
-              =================================== */
+              ================================================= */
 
               <View className="mt-[30px]">
                 <View className="mb-4 flex-row items-end justify-between px-5">
@@ -397,6 +511,8 @@ export default function HomeScreen() {
                         key={cafe.id}
                         cafe={cafe}
                         onPress={() => openCafe(cafe.id)}
+                        isSaved={savedIds.includes(cafe.id)}
+                        onToggleSave={() => handleToggleSave(cafe.id)}
                       />
                     ))}
                   </View>
@@ -404,9 +520,9 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* =====================================
+            {/* =================================================
                 EMPTY DATABASE
-            ===================================== */}
+            ================================================= */}
 
             {cafes.length === 0 && !error && <EmptyCafes />}
           </>
@@ -418,16 +534,23 @@ export default function HomeScreen() {
   );
 }
 
-/* ==================================================
+/* =========================================================
    FEATURED CARD
-================================================== */
+========================================================= */
 
 type FeaturedCafeCardProps = {
   cafe: Cafe;
   onPress: () => void;
+  isSaved: boolean;
+  onToggleSave: () => void;
 };
 
-function FeaturedCafeCard({ cafe, onPress }: FeaturedCafeCardProps) {
+function FeaturedCafeCard({
+  cafe,
+  onPress,
+  isSaved,
+  onToggleSave,
+}: FeaturedCafeCardProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -446,23 +569,23 @@ function FeaturedCafeCard({ cafe, onPress }: FeaturedCafeCardProps) {
 
         <View className="absolute inset-x-0 bottom-0 h-[70px] bg-black/10" />
 
-        {/* Favorite */}
+        {/* FAVORITE */}
 
         <Pressable
           className="absolute right-[13px] top-[13px] h-[38px] w-[38px] items-center justify-center rounded-[14px] bg-white/95"
           onPress={(event) => {
             event.stopPropagation();
-
-            Alert.alert(
-              "Saved Cafés",
-              "Favorite functionality will be connected next.",
-            );
+            onToggleSave();
           }}
         >
-          <Ionicons name="heart-outline" size={19} color="#302720" />
+          <Ionicons
+            name={isSaved ? "heart" : "heart-outline"}
+            size={19}
+            color={isSaved ? "#E0524D" : "#302720"}
+          />
         </Pressable>
 
-        {/* Featured */}
+        {/* FEATURED */}
 
         <View className="absolute left-[13px] top-[13px] flex-row items-center rounded-[10px] bg-[#412D22]/90 px-2.5 py-1.5">
           <Ionicons name="sparkles" size={12} color="#FFFFFF" />
@@ -472,7 +595,7 @@ function FeaturedCafeCard({ cafe, onPress }: FeaturedCafeCardProps) {
           </Text>
         </View>
 
-        {/* Rating */}
+        {/* RATING */}
 
         <View className="absolute bottom-[13px] left-[13px] flex-row items-center rounded-[10px] bg-white px-2.5 py-1.5">
           <Ionicons name="star" size={13} color="#F6B94A" />
@@ -522,16 +645,23 @@ function FeaturedCafeCard({ cafe, onPress }: FeaturedCafeCardProps) {
   );
 }
 
-/* ==================================================
+/* =========================================================
    NEARBY CARD
-================================================== */
+========================================================= */
 
 type NearbyCafeCardProps = {
   cafe: Cafe;
   onPress: () => void;
+  isSaved: boolean;
+  onToggleSave: () => void;
 };
 
-function NearbyCafeCard({ cafe, onPress }: NearbyCafeCardProps) {
+function NearbyCafeCard({
+  cafe,
+  onPress,
+  isSaved,
+  onToggleSave,
+}: NearbyCafeCardProps) {
   return (
     <Pressable
       onPress={onPress}
@@ -589,6 +719,23 @@ function NearbyCafeCard({ cafe, onPress }: NearbyCafeCardProps) {
 
           <View className="flex-1" />
 
+          {/* SAVE */}
+
+          <Pressable
+            onPress={(event) => {
+              event.stopPropagation();
+              onToggleSave();
+            }}
+            hitSlop={8}
+            className="ml-2 h-8 w-8 items-center justify-center rounded-full bg-[#FAF4F0]"
+          >
+            <Ionicons
+              name={isSaved ? "heart" : "heart-outline"}
+              size={17}
+              color={isSaved ? "#E0524D" : "#806F65"}
+            />
+          </Pressable>
+
           <Ionicons name="chevron-forward" size={17} color="#B7ABA3" />
         </View>
       </View>
@@ -596,9 +743,9 @@ function NearbyCafeCard({ cafe, onPress }: NearbyCafeCardProps) {
   );
 }
 
-/* ==================================================
+/* =========================================================
    EMPTY SEARCH
-================================================== */
+========================================================= */
 
 function EmptySearch() {
   return (
@@ -618,9 +765,9 @@ function EmptySearch() {
   );
 }
 
-/* ==================================================
-   EMPTY CAFÉS
-================================================== */
+/* =========================================================
+   EMPTY CAFES
+========================================================= */
 
 function EmptyCafes() {
   return (

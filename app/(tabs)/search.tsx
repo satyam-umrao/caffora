@@ -78,7 +78,7 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#FAF7F3]">
-      {/* =========Search Header================== */}
+      {/* =========Search Headers================== */}
 
       <View className="px-5 pt-5 pb-5  h-[90px] ">
         {/* ======================== SEARCH BAR===== */}
