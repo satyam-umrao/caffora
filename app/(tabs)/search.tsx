@@ -1,18 +1,15 @@
-
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  Image,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-
+import React, { useState } from "react";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const popularSearches = [
   { title: "Coffee", icon: "local-cafe" as const },
@@ -26,23 +23,19 @@ const popularSearches = [
 const vibes = [
   {
     title: "Cozy Mornings",
-    image:
-      "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800",
+    image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800",
   },
   {
     title: "Modern Minimal",
-    image:
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
   },
   {
     title: "Star",
-    image:
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
   },
   {
     title: "Best",
-    image:
-      "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
+    image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800",
   },
 ];
 
@@ -56,9 +49,7 @@ export default function SearchScreen() {
   ]);
 
   const removeRecent = (item: string) => {
-    setRecentSearches((prev) =>
-      prev.filter((search) => search !== item)
-    );
+    setRecentSearches((prev) => prev.filter((search) => search !== item));
   };
 
   const clearAll = () => {
@@ -71,14 +62,14 @@ export default function SearchScreen() {
 
     setRecentSearches((prev) => {
       const filtered = prev.filter(
-        (item) => item.toLowerCase() !== query.toLowerCase()
+        (item) => item.toLowerCase() !== query.toLowerCase(),
       );
 
       return [query, ...filtered].slice(0, 5);
     });
 
     router.push({
-      pathname: "/search-results",
+      pathname: "../search/search-results",
       params: {
         query,
       },
@@ -87,20 +78,19 @@ export default function SearchScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-[#FAF7F3]">
-
       {/* =========Search Header================== */}
 
-      <View className="px-5 pt-12 pb-5">
+      <View className="px-5 pt-5 pb-5  h-[90px] ">
         {/* ======================== SEARCH BAR===== */}
-        <View className="mx-5 h-14 flex-row items-center rounded-[18px] border border-[#EDE3DC] bg-white px-2 shadow-sm">
-          <Ionicons name="search-outline" size={21} color="#8A7D75" />
+        <View className="h-[65px] flex-row items-center rounded-[18px] border border-[#EDE3DC] bg-white px-5 shadow-sm">
+          <Ionicons name="search-outline" size={25} color="#8A7D75" />
 
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Search cafés, food, location..."
             placeholderTextColor="#9B9089"
-            className="h-full flex-1 px-2.5 text-sm text-[#302720]"
+            className="h-full flex-1 px-2.5 text-m text-[#302720]"
             returnKeyType="search"
             onSubmitEditing={handleSearch}
           />
@@ -110,13 +100,6 @@ export default function SearchScreen() {
               <Ionicons name="close-circle" size={20} color="#A99B92" />
             </Pressable>
           )}
-
-          <Pressable
-            className="h-[42px] w-[42px] items-center justify-center rounded-[14px] bg-[#F9E8DE]"
-            onPress={() => router.push("/filters")}
-          >
-            <Ionicons name="options-outline" size={21} color="#B95E2E" />
-          </Pressable>
         </View>
       </View>
 
@@ -127,7 +110,6 @@ export default function SearchScreen() {
           paddingBottom: 110,
         }}
       >
-
         {/* ================Recent Searches================== */}
         {recentSearches.length > 0 && (
           <View className="mt-3">
@@ -148,22 +130,15 @@ export default function SearchScreen() {
                 <Pressable
                   key={item}
                   onPress={() => {
-                    setSearchText(item);
-
                     router.push({
-                      pathname: "/search-results",
-                      params: { query: item },
+                      pathname: "../search/search-results",
                     });
                   }}
                   className="h-[64px] flex-row items-center justify-between rounded-xl border border-[#E8E1DB] bg-white px-3"
                 >
                   <View className="flex-row items-center">
                     <View className="h-10 w-10 items-center justify-center rounded-full bg-[#FEF1EC]">
-                      <Ionicons
-                        name="time-outline"
-                        size={18}
-                        color="#7C726B"
-                      />
+                      <Ionicons name="time-outline" size={18} color="#7C726B" />
                     </View>
 
                     <Text className="ml-3 text-[15px] text-[#201A17]">
@@ -194,16 +169,14 @@ export default function SearchScreen() {
               <Pressable
                 key={item.title}
                 onPress={() => {
-                  setSearchText(item.title);
                   router.push({
-                    pathname: "/search-results",
-                    params: { query: item.title},
+                    pathname: "../search/search-results",
                   });
 
                   setRecentSearches((prev) => {
                     const filtered = prev.filter(
                       (search) =>
-                        search.toLowerCase() !== item.title.toLowerCase()
+                        search.toLowerCase() !== item.title.toLowerCase(),
                     );
 
                     return [item.title, ...filtered].slice(0, 5);
@@ -211,11 +184,7 @@ export default function SearchScreen() {
                 }}
                 className="h-12 flex-row items-center rounded-full border border-[#E8E1DB] bg-white px-3"
               >
-                <MaterialIcons
-                  name={item.icon}
-                  size={16}
-                  color="#994418"
-                />
+                <MaterialIcons name={item.icon} size={16} color="#994418" />
 
                 <Text className="ml-1.5 text-[13px] font-semibold text-[#55433B]">
                   {item.title}
@@ -261,6 +230,6 @@ export default function SearchScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView >
+    </SafeAreaView>
   );
 }

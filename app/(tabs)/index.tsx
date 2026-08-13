@@ -147,7 +147,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 24,
+          paddingBottom: 60,
         }}
         refreshControl={
           <RefreshControl
@@ -215,26 +215,28 @@ export default function HomeScreen() {
             SEARCH
         ========================================= */}
 
-        <View className="mx-5 h-14 flex-row items-center rounded-[18px] border border-[#EDE3DC] bg-white px-2 shadow-sm">
-          <Ionicons name="search-outline" size={21} color="#8A7D75" />
+        <View className="mx-5 h-[65px] flex-row items-center rounded-[50px] border border-[#EDE3DC] bg-white px-3 shadow-sm">
+          <View className="h-[45px] w-[45px] items-center justify-center rounded-[50px] ">
+            <Ionicons name="search-outline" size={25} color="#8A7D75" />
+          </View>
 
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Search cafés, food, location..."
             placeholderTextColor="#9B9089"
-            className="h-full flex-1 px-2.5 text-sm text-[#302720]"
+            className="h-full flex-1 px-2.5 text-[15px] font-semibold text-[#3027209d]"
             returnKeyType="search"
           />
 
           {searchText.length > 0 && (
-            <Pressable onPress={() => setSearchText("")} className="mr-1 p-1">
+            <Pressable onPress={() => setSearchText("")} className="mr-1 p-1 ">
               <Ionicons name="close-circle" size={20} color="#A99B92" />
             </Pressable>
           )}
 
           <Pressable
-            className="h-[42px] w-[42px] items-center justify-center rounded-[14px] bg-[#F9E8DE]"
+            className="h-[45px] w-[45px] items-center justify-center rounded-[50px] bg-[#F9E8DE]"
             onPress={() => router.push("/filters")}
           >
             <Ionicons name="options-outline" size={21} color="#B95E2E" />
