@@ -7,7 +7,7 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
