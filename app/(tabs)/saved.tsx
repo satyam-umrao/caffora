@@ -7,7 +7,7 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -169,7 +169,7 @@ export default function SavedScreen() {
 
       <View className="h-px bg-[#EAE2DC]" />
 
-      {/* CONTENT */}
+      {/*CONTENT*/}
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
