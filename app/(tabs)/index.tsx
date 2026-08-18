@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -123,7 +123,7 @@ export default function HomeScreen() {
   };
 
   /* =====================================================
-     INITIAL LOAD
+     INITIAL LOAD & FOCUS EFFECT
   ===================================================== */
 
   useEffect(() => {
@@ -131,6 +131,12 @@ export default function HomeScreen() {
     loadCafes();
     loadSavedCafes();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSavedCafes();
+    }, []),
+  );
 
   /* =====================================================
      REFRESH
@@ -781,7 +787,7 @@ function EmptyCafes() {
       </Text>
 
       <Text className="mt-1.5 max-w-[280px] text-center text-xs leading-[18px] text-[#8C7E75]">
-        We couldn't find any cafés right now. Pull down to refresh.
+        We could not find any cafés right now. Pull down to refresh.
       </Text>
     </View>
   );
