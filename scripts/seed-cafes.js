@@ -3,7 +3,12 @@ const { getFirestore } = require("firebase-admin/firestore");
 const path = require("path");
 
 const serviceAccount = require(
-  path.join(__dirname, "caffora-1c2a1-firebase-adminsdk-fbsvc-69fc1af51a.json"),
+  // path.join(__dirname, "caffora-1c2a1-firebase-adminsdk-fbsvc-69fc1af51a.json"),
+  path.resolve(
+    process.cwd(),
+    "scripts",
+    "caffora-1c2a1-firebase-adminsdk-fbsvc-69fc1af51a.json",
+  ),
 );
 
 initializeApp({
@@ -1246,7 +1251,9 @@ const cafes = [
 ];
 
 async function seedCafes() {
-  console.log("🚀 Starting updating 30 cafés with clean price format into Firestore...");
+  console.log(
+    "🚀 Starting updating 30 cafés with clean price format into Firestore...",
+  );
 
   const cafesRef = db.collection("cafes");
   const existingDocs = await cafesRef.get();
@@ -1269,7 +1276,9 @@ async function seedCafes() {
   }
 
   await batch.commit();
-  console.log(`✅ Successfully seeded ${cafes.length} cafés with clean prices into Firestore!`);
+  console.log(
+    `✅ Successfully seeded ${cafes.length} cafés with clean prices into Firestore!`,
+  );
 }
 
 seedCafes()
