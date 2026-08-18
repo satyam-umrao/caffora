@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import {
   collection,
   deleteDoc,
@@ -7,7 +7,7 @@ import {
   getDoc,
   getDocs,
 } from "firebase/firestore";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -44,10 +44,10 @@ export default function SavedScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const user = auth.currentUser;
-
   const loadSavedCafes = useCallback(async () => {
-    if (!user) {
+    const currentUser = auth.currentUser;
+
+    if (!currentUser) {
       setCafes([]);
       setLoading(false);
       setRefreshing(false);
@@ -55,25 +55,20 @@ export default function SavedScreen() {
     }
 
     try {
-      setLoading(true);
-
-      const favoritesRef = collection(db, "users", user.uid, "favorites");
-
+      const favoritesRef = collection(db, "users", currentUser.uid, "favorites");
       const favoriteSnapshot = await getDocs(favoritesRef);
 
       const saved: SavedCafe[] = [];
 
       for (const favoriteDoc of favoriteSnapshot.docs) {
         const favoriteData = favoriteDoc.data();
-
-        const cafeId = favoriteData.cafeId;
+        const cafeId = favoriteData.cafeId || favoriteDoc.id;
 
         if (!cafeId) {
           continue;
         }
 
         const cafeRef = doc(db, "cafes", cafeId);
-
         const cafeSnapshot = await getDoc(cafeRef);
 
         if (!cafeSnapshot.exists()) {
@@ -92,17 +87,17 @@ export default function SavedScreen() {
       setCafes(saved);
     } catch (error) {
       console.error("Failed to load saved cafes:", error);
-
-      Alert.alert("Something went wrong", "We couldn't load your saved cafes.");
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [user]);
+  }, []);
 
-  useEffect(() => {
-    loadSavedCafes();
-  }, [loadSavedCafes]);
+  useFocusEffect(
+    useCallback(() => {
+      loadSavedCafes();
+    }, [loadSavedCafes]),
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -110,15 +105,19 @@ export default function SavedScreen() {
   };
 
   const removeCafe = async (cafe: SavedCafe) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
+
     try {
-      await deleteDoc(doc(db, "favorites", cafe.favoriteId));
+      await deleteDoc(
+        doc(db, "users", currentUser.uid, "favorites", cafe.favoriteId),
+      );
 
       setCafes((current) =>
         current.filter((item) => item.favoriteId !== cafe.favoriteId),
       );
     } catch (error) {
       console.error(error);
-
       Alert.alert("Couldn't remove cafe", "Please try again.");
     }
   };
@@ -141,10 +140,11 @@ export default function SavedScreen() {
     );
   };
 
+  const currentUser = auth.currentUser;
+
   return (
     <SafeAreaView edges={["top"]} className="flex-1 bg-[#FAF7F3]">
       {/* HEADER */}
-
       <View className="px-5 pb-5 pt-4">
         <View className="flex-row items-center justify-between">
           <View>
@@ -169,8 +169,7 @@ export default function SavedScreen() {
 
       <View className="h-px bg-[#EAE2DC]" />
 
-      {/*CONTENT*/}
-
+      {/* CONTENT */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#B95E2E" />
@@ -179,7 +178,7 @@ export default function SavedScreen() {
             Loading saved cafes...
           </Text>
         </View>
-      ) : !user ? (
+      ) : !currentUser ? (
         <LoginRequired />
       ) : cafes.length === 0 ? (
         <EmptySaved />
@@ -193,7 +192,7 @@ export default function SavedScreen() {
               tintColor="#B95E2E"
             />
           }
-          contentContainerClassName="px-5 pb-[120px] pt-5"
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 20 }}
         >
           <View className="mb-4 flex-row items-center justify-between">
             <Text className="text-base font-extrabold text-[#302720]">
@@ -240,7 +239,7 @@ function SavedCafeCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row overflow-hidden rounded-[20px] border border-[#EEE4DD] bg-white p-2.5 shadow-sm active:opacity-70"
+      className="mb-3 flex-row overflow-hidden rounded-[20px] border border-[#EEE4DD] bg-white p-2.5 shadow-sm"
     >
       <Image
         source={{
@@ -321,7 +320,7 @@ function EmptySaved() {
 
       <Pressable
         onPress={() => router.push("/(tabs)/search")}
-        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5 active:bg-[#9E4D25]"
+        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5"
       >
         <Text className="text-sm font-extrabold text-white">Explore Cafes</Text>
       </Pressable>
@@ -350,7 +349,7 @@ function LoginRequired() {
 
       <Pressable
         onPress={() => router.push("/(auth)/login")}
-        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5 active:bg-[#9E4D25]"
+        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5"
       >
         <Text className="text-sm font-extrabold text-white">Sign In</Text>
       </Pressable>

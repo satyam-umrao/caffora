@@ -1,10 +1,11 @@
 import {
-    collection,
-    deleteDoc,
-    doc,
-    getDocs,
-    serverTimestamp,
-    setDoc
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 
 import { auth, db } from "./config";
@@ -59,13 +60,14 @@ export async function isCafeSaved(cafeId: string): Promise<boolean> {
     return false;
   }
 
-  const favoriteRef = doc(db, "users", user.uid, "favorites", cafeId);
-
-  const snapshot = await import("firebase/firestore").then(({ getDoc }) =>
-    getDoc(favoriteRef),
-  );
-
-  return snapshot.exists();
+  try {
+    const favoriteRef = doc(db, "users", user.uid, "favorites", cafeId);
+    const snapshot = await getDoc(favoriteRef);
+    return snapshot.exists();
+  } catch (error) {
+    console.error("isCafeSaved error:", error);
+    return false;
+  }
 }
 
 /**
@@ -98,9 +100,12 @@ export async function getSavedCafeIds(): Promise<string[]> {
     return [];
   }
 
-  const favoritesRef = collection(db, "users", user.uid, "favorites");
-
-  const snapshot = await getDocs(favoritesRef);
-
-  return snapshot.docs.map((item) => item.id).filter(Boolean);
+  try {
+    const favoritesRef = collection(db, "users", user.uid, "favorites");
+    const snapshot = await getDocs(favoritesRef);
+    return snapshot.docs.map((item) => item.id).filter(Boolean);
+  } catch (error) {
+    console.error("getSavedCafeIds error:", error);
+    return [];
+  }
 }

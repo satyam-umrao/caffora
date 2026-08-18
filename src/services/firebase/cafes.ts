@@ -275,9 +275,10 @@ export async function filterCafes(filters: CafeFilters = {}): Promise<Cafe[]> {
     /* Price */
 
     if (filters.maxPrice !== undefined) {
-      const priceCount = (cafe.priceRange.match(/₹/g) || []).length;
+      const match = (cafe.priceRange || "").replace(/,/g, "").match(/\d+/);
+      const cost = match ? parseInt(match[0], 10) : 800;
 
-      if (priceCount > filters.maxPrice) {
+      if (cost > filters.maxPrice) {
         return false;
       }
     }

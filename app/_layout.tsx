@@ -56,6 +56,14 @@ export default function RootLayout() {
         }}
       />
 
+      {/* Search Results Screen */}
+      <Stack.Screen
+        name="search/search-results"
+        options={{
+          headerShown: false,
+        }}
+      />
+
       {/* Booking */}
       <Stack.Screen
         name="booking/[cafeId]"

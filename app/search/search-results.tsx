@@ -12,11 +12,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Cafe, searchCafes } from "../../src/services/firebase/cafes";
+import {
+  getSavedCafeIds,
+  toggleCafeSaved,
+} from "../../src/services/firebase/favorites";
 
 export default function SearchResultsScreen() {
   const { query } = useLocalSearchParams<{ query?: string }>();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
+  const [savedIds, setSavedIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -24,7 +29,17 @@ export default function SearchResultsScreen() {
 
   useEffect(() => {
     runSearch();
+    loadSaved();
   }, [searchQuery]);
+
+  const loadSaved = async () => {
+    try {
+      const ids = await getSavedCafeIds();
+      setSavedIds(ids);
+    } catch (err) {
+      console.error("Load saved error:", err);
+    }
+  };
 
   const runSearch = async () => {
     try {
@@ -32,13 +47,25 @@ export default function SearchResultsScreen() {
       setError("");
 
       const results = await searchCafes(searchQuery);
-
       setCafes(results);
-    } catch (error) {
-      console.error("Search error:", error);
+    } catch (err) {
+      console.error("Search error:", err);
       setError("We couldn't load search results.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleToggleSave = async (cafeId: string) => {
+    try {
+      const saved = await toggleCafeSaved(cafeId);
+      setSavedIds((current) =>
+        saved ? [...current, cafeId] : current.filter((id) => id !== cafeId),
+      );
+    } catch (err: any) {
+      if (err?.message === "LOGIN_REQUIRED") {
+        router.push("/(auth)/login");
+      }
     }
   };
 
@@ -52,15 +79,21 @@ export default function SearchResultsScreen() {
   };
 
   const renderCafe = ({ item }: { item: Cafe }) => {
+    const isSaved = savedIds.includes(item.id);
+
     return (
       <Pressable
         onPress={() => openCafe(item.id)}
         className="mb-4 overflow-hidden rounded-2xl border border-[#E8E1DB] bg-white"
       >
         {/* Cafe Image */}
-        <View className="relative h-[190px] w-full">
+        <View className="relative h-[190px] w-full bg-[#EADFD7]">
           <Image
-            source={{ uri: item.image }}
+            source={{
+              uri:
+                item.image ||
+                "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
+            }}
             className="h-full w-full"
             resizeMode="cover"
           />
@@ -73,10 +106,9 @@ export default function SearchResultsScreen() {
           )}
 
           {/* Rating */}
-          <View className="absolute right-3 top-3 flex-row items-center rounded-full bg-white/95 px-2.5 py-1.5">
-            <Ionicons name="star" size={14} color="#B95E2E" />
-
-            <Text className="ml-1 text-[12px] font-bold text-[#302720]">
+          <View className="absolute right-3 top-3 flex-row items-center rounded-full bg-white/95 px-2.5 py-1.5 shadow-sm">
+            <Ionicons name="star" size={14} color="#F6B94A" />
+            <Text className="ml-1 text-[12px] font-extrabold text-[#302720]">
               {item.rating.toFixed(1)}
             </Text>
           </View>
@@ -87,14 +119,14 @@ export default function SearchResultsScreen() {
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
               <Text
-                className="text-[18px] font-bold text-[#241C18]"
+                className="text-[17px] font-extrabold text-[#241C18]"
                 numberOfLines={1}
               >
                 {item.name}
               </Text>
 
               <Text
-                className="mt-1 text-[13px] text-[#81746C]"
+                className="mt-1 text-[13px] font-medium text-[#81746C]"
                 numberOfLines={1}
               >
                 {item.category} • {item.priceRange}
@@ -102,17 +134,20 @@ export default function SearchResultsScreen() {
             </View>
 
             <Pressable
-              onPress={() => console.log("Save cafe:", item.id)}
-              className="h-9 w-9 items-center justify-center rounded-full bg-[#FEF1EC]"
+              onPress={() => handleToggleSave(item.id)}
+              className="h-9 w-9 items-center justify-center rounded-full bg-[#FAF4F0]"
             >
-              <Ionicons name="bookmark-outline" size={19} color="#B95E2E" />
+              <Ionicons
+                name={isSaved ? "heart" : "heart-outline"}
+                size={19}
+                color={isSaved ? "#E0524D" : "#B95E2E"}
+              />
             </Pressable>
           </View>
 
           {/* Location */}
           <View className="mt-3 flex-row items-center">
             <Ionicons name="location-outline" size={16} color="#8A7D75" />
-
             <Text
               className="ml-1.5 flex-1 text-[13px] text-[#81746C]"
               numberOfLines={1}
@@ -128,7 +163,6 @@ export default function SearchResultsScreen() {
               size={15}
               color="#8A7D75"
             />
-
             <Text className="ml-1.5 text-[12px] text-[#93867E]">
               {item.reviewCount} reviews
             </Text>
@@ -141,10 +175,10 @@ export default function SearchResultsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
       {/* Header */}
-      <View className="flex-row items-center px-5 pb-4 pt-3">
+      <View className="flex-row items-center px-5 pb-4 pt-3 border-b border-[#EEE5DE] bg-white">
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-white"
+          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
         >
           <Ionicons name="arrow-back" size={22} color="#302720" />
         </Pressable>
@@ -155,7 +189,7 @@ export default function SearchResultsScreen() {
           </Text>
 
           <Text
-            className="mt-0.5 text-[19px] font-bold text-[#241C18]"
+            className="mt-0.5 text-[18px] font-extrabold text-[#241C18]"
             numberOfLines={1}
           >
             {searchQuery || "All cafés"}
@@ -167,14 +201,13 @@ export default function SearchResultsScreen() {
       {loading && (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color="#B95E2E" />
-
           <Text className="mt-3 text-sm text-[#81746C]">Finding cafés...</Text>
         </View>
       )}
 
       {/* Error */}
       {!loading && error !== "" && (
-        <View className="flex-1 items-center justify-center px-8 ">
+        <View className="flex-1 items-center justify-center px-8">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-[#F9E8DE]">
             <Ionicons name="cloud-offline-outline" size={28} color="#B95E2E" />
           </View>
@@ -196,7 +229,7 @@ export default function SearchResultsScreen() {
         </View>
       )}
 
-      {/* Results*/}
+      {/* Results */}
       {!loading && error === "" && (
         <FlatList
           data={cafes}
@@ -205,13 +238,13 @@ export default function SearchResultsScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{
             paddingHorizontal: 20,
-            paddingBottom: 30,
-            height: cafes.length === 0 ? "80%" : undefined,
+            paddingTop: 16,
+            paddingBottom: 40,
           }}
           ListHeaderComponent={
             cafes.length > 0 ? (
               <View className="mb-4">
-                <Text className="text-[13px] text-[#93867E]">
+                <Text className="text-[13px] font-semibold text-[#93867E]">
                   {cafes.length} {cafes.length === 1 ? "café" : "cafés"} found
                 </Text>
               </View>

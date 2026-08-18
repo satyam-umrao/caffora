@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import { Alert, Image, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { logout } from "../../src/services/firebase/auth";
 import { auth } from "../../src/services/firebase/config";
+import { getUserProfile } from "../../src/services/firebase/users";
 
 type ProfileItemProps = {
   icon: keyof typeof Ionicons.glyphMap;
@@ -17,11 +18,52 @@ type ProfileItemProps = {
 };
 
 export default function ProfileScreen() {
-  const user = auth.currentUser;
+  const [profile, setProfile] = useState<{
+    name: string;
+    email: string;
+    avatar: string;
+    phoneNumber?: string;
+  }>({
+    name: auth.currentUser?.displayName || "Caffora User",
+    email: auth.currentUser?.email || "No email available",
+    avatar:
+      auth.currentUser?.photoURL ||
+      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+    phoneNumber: auth.currentUser?.phoneNumber || undefined,
+  });
 
-  const name = user?.displayName || "Caffora User";
-  const email = user?.email || "No email available";
-  const avatar = user?.photoURL || "https://i.pravatar.cc/300?img=12";
+  const loadProfileData = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+      const userDoc = await getUserProfile(user.uid);
+      setProfile({
+        name: userDoc?.displayName || user.displayName || "Caffora User",
+        email: userDoc?.email || user.email || "No email available",
+        avatar:
+          userDoc?.photoURL ||
+          user.photoURL ||
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+        phoneNumber: userDoc?.phoneNumber || user.phoneNumber || undefined,
+      });
+    } catch {
+      setProfile({
+        name: user.displayName || "Caffora User",
+        email: user.email || "No email available",
+        avatar:
+          user.photoURL ||
+          "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
+        phoneNumber: user.phoneNumber || undefined,
+      });
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadProfileData();
+    }, [loadProfileData]),
+  );
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -35,11 +77,9 @@ export default function ProfileScreen() {
         onPress: async () => {
           try {
             await logout();
-
             router.replace("/(auth)/login");
           } catch (error) {
             console.error(error);
-
             Alert.alert("Logout failed", "Please try again.");
           }
         },
@@ -51,7 +91,7 @@ export default function ProfileScreen() {
     <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="pb-[130px]"
+        contentContainerStyle={{ paddingBottom: 130 }}
       >
         {/* ================================================= */}
         {/* HEADER */}
@@ -73,7 +113,7 @@ export default function ProfileScreen() {
 
             <Pressable
               onPress={() => router.push("/profile/settings")}
-              className="h-11 w-11 items-center justify-center rounded-full bg-white/15 active:bg-white/25"
+              className="h-11 w-11 items-center justify-center rounded-full bg-white/15"
             >
               <Ionicons name="settings-outline" size={21} color="#FFFFFF" />
             </Pressable>
@@ -83,8 +123,8 @@ export default function ProfileScreen() {
 
           <View className="flex-row items-center rounded-[24px] border border-white/15 bg-white/10 p-4">
             <Image
-              source={{ uri: avatar }}
-              className="h-[76px] w-[76px] rounded-full border-[3px] border-white"
+              source={{ uri: profile.avatar }}
+              className="h-[76px] w-[76px] rounded-full border-[3px] border-white bg-[#EADFD7]"
             />
 
             <View className="ml-4 flex-1">
@@ -92,30 +132,29 @@ export default function ProfileScreen() {
                 className="text-[21px] font-extrabold text-white"
                 numberOfLines={1}
               >
-                {name}
+                {profile.name}
               </Text>
 
               <Text
                 className="mt-1 text-sm font-medium text-[#FBE7DA]"
                 numberOfLines={1}
               >
-                {email}
+                {profile.email}
               </Text>
 
-              {user?.phoneNumber && (
+              {profile.phoneNumber ? (
                 <View className="mt-2 flex-row items-center">
                   <Ionicons name="call-outline" size={13} color="#FBE7DA" />
-
                   <Text className="ml-1.5 text-xs text-[#FBE7DA]">
-                    {user.phoneNumber}
+                    {profile.phoneNumber}
                   </Text>
                 </View>
-              )}
+              ) : null}
             </View>
 
             <Pressable
               onPress={() => router.push("/profile/edit")}
-              className="ml-2 h-10 w-10 items-center justify-center rounded-full bg-white active:bg-[#FBE7DA]"
+              className="ml-2 h-10 w-10 items-center justify-center rounded-full bg-white"
             >
               <Ionicons name="create-outline" size={19} color="#BB5729" />
             </Pressable>
@@ -152,7 +191,7 @@ export default function ProfileScreen() {
               icon="heart-outline"
               title="Saved Cafes"
               subtitle="Your favorite cafes"
-              onPress={() => router.push("/saved")}
+              onPress={() => router.push("/(tabs)/saved")}
               isLast
             />
           </View>
@@ -204,7 +243,7 @@ export default function ProfileScreen() {
             <ProfileItem
               icon="information-circle-outline"
               title="About Caffora"
-              subtitle="Learn more about Caffora"
+              subtitle="Learn more about Caffora & Policies"
               onPress={() => router.push("/profile/about")}
             />
 
@@ -212,12 +251,7 @@ export default function ProfileScreen() {
               icon="document-text-outline"
               title="Terms & Conditions"
               subtitle="Read our terms and policies"
-              onPress={() =>
-                Alert.alert(
-                  "Terms & Conditions",
-                  "Terms & Conditions will be available soon.",
-                )
-              }
+              onPress={() => router.push("/profile/about")}
               isLast
             />
           </View>
@@ -228,7 +262,7 @@ export default function ProfileScreen() {
 
           <Pressable
             onPress={handleLogout}
-            className="mt-7 h-14 flex-row items-center justify-center rounded-[18px] border border-[#F6D7D5] bg-[#FFF8F7] active:bg-[#FFF0EE]"
+            className="mt-7 h-14 flex-row items-center justify-center rounded-[18px] border border-[#F6D7D5] bg-[#FFF8F7]"
           >
             <View className="h-9 w-9 items-center justify-center rounded-full bg-[#FCE9E7]">
               <Ionicons name="log-out-outline" size={19} color="#E0524D" />
@@ -238,16 +272,6 @@ export default function ProfileScreen() {
               Logout
             </Text>
           </Pressable>
-
-          {/* Version */}
-
-          <Text className="mt-6 text-center text-xs font-medium text-[#B0A7A0]">
-            Caffora
-          </Text>
-
-          <Text className="mt-1 text-center text-[10px] text-[#C0B8B1]">
-            Your coffee. Your place.
-          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -255,7 +279,7 @@ export default function ProfileScreen() {
 }
 
 /* ========================================================= */
-/* PROFILE ITEM */
+/* ITEM COMPONENT */
 /* ========================================================= */
 
 function ProfileItem({
@@ -263,41 +287,45 @@ function ProfileItem({
   title,
   subtitle,
   onPress,
-  isLast = false,
+  danger,
+  isLast,
 }: ProfileItemProps) {
   return (
     <Pressable
       onPress={onPress}
-      className={`flex-row items-center px-4 py-4 active:bg-[#FAF7F3] ${
-        !isLast ? "border-b border-[#F0EBE6]" : ""
+      className={`flex-row items-center justify-between p-4 ${
+        !isLast ? "border-b border-[#F4EFEB]" : ""
       }`}
     >
-      {/* Icon */}
+      <View className="flex-row items-center flex-1 pr-3">
+        <View
+          className={`h-11 w-11 items-center justify-center rounded-[14px] ${
+            danger ? "bg-[#FDEAE8]" : "bg-[#FAF3EE]"
+          }`}
+        >
+          <Ionicons
+            name={icon}
+            size={21}
+            color={danger ? "#E0524D" : "#BB5729"}
+          />
+        </View>
 
-      <View className="h-11 w-11 items-center justify-center rounded-[14px] bg-[#FAF6F2]">
-        <Ionicons name={icon} size={21} color="#BB5729" />
-      </View>
-
-      {/* Text */}
-
-      <View className="ml-4 flex-1">
-        <Text className="text-[15px] font-bold text-[#302A26]">{title}</Text>
-
-        {subtitle && (
+        <View className="ml-3.5 flex-1">
           <Text
-            className="mt-1 text-xs font-medium text-[#9A918A]"
-            numberOfLines={1}
+            className={`text-[15px] font-bold ${
+              danger ? "text-[#E0524D]" : "text-[#2B211C]"
+            }`}
           >
-            {subtitle}
+            {title}
           </Text>
-        )}
+
+          {subtitle ? (
+            <Text className="mt-0.5 text-xs text-[#8A7D75]">{subtitle}</Text>
+          ) : null}
+        </View>
       </View>
 
-      {/* Arrow */}
-
-      <View className="h-8 w-8 items-center justify-center rounded-full bg-[#FAF8F5]">
-        <Ionicons name="chevron-forward" size={16} color="#B6ADA6" />
-      </View>
+      <Ionicons name="chevron-forward" size={18} color="#C4B8AF" />
     </Pressable>
   );
 }
