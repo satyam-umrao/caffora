@@ -135,7 +135,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       loadSavedCafes();
-    }, [])
+    }, []),
   );
 
   /* =====================================================
@@ -787,7 +787,7 @@ function EmptyCafes() {
       </Text>
 
       <Text className="mt-1.5 max-w-[280px] text-center text-xs leading-[18px] text-[#8C7E75]">
-        We couldn't find any cafés right now. Pull down to refresh.
+        We could not find any cafés right now. Pull down to refresh.
       </Text>
     </View>
   );
