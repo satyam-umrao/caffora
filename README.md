@@ -1,4 +1,4 @@
-<h1 align="center">🚀 Caffora — Team Git Workflow </h1>
+<h1 align="center">🚀 Caffora — Team Git Workflow Commands </h1>
 
 <p align="center">Welcome to the <b><u>Caffora</u> </b>development team! Please follow this standard Git workflow to keep our codebase clean, conflict-free, and organized.</p>
 
