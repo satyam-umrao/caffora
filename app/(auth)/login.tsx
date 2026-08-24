@@ -97,7 +97,10 @@ export default function LoginScreen() {
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
-        <Pressable onPress={() => router.back()} style={styles.back}>
+        <Pressable
+          onPress={() => router.replace("/(auth)/onboarding")}
+          style={styles.back}
+        >
           <Text style={[styles.backText, { color: text }]}>‹</Text>
         </Pressable>
 
@@ -173,42 +176,6 @@ export default function LoginScreen() {
               ) : (
                 <Text style={styles.buttonText}>Continue</Text>
               )}
-            </Pressable>
-
-            <View style={styles.orRow}>
-              <View
-                style={[
-                  styles.line,
-                  {
-                    backgroundColor: border,
-                  },
-                ]}
-              />
-              <Text style={[styles.or, { color: secondary }]}>or</Text>
-              <View
-                style={[
-                  styles.line,
-                  {
-                    backgroundColor: border,
-                  },
-                ]}
-              />
-            </View>
-
-            <Pressable
-              style={[
-                styles.socialButton,
-                {
-                  backgroundColor: inputBg,
-                  borderColor: border,
-                },
-              ]}
-            >
-              <Text style={[styles.google, { color: text }]}>G</Text>
-
-              <Text style={[styles.socialText, { color: text }]}>
-                Continue with Google
-              </Text>
             </Pressable>
           </View>
 
