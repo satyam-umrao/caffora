@@ -6,13 +6,37 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAmsyXc1jq7sc4g9xTZFIa8Bd0Q9Ypk3TY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "caffora-1c2a1.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "caffora-1c2a1",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "caffora-1c2a1.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "996089968235",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:996089968235:web:1e37505810cdd1477c632e"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAmsyXc1jq7sc4g9xTZFIa8Bd0Q9Ypk3TY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "caffora-1c2a1.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "caffora-1c2a1",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "caffora-1c2a1.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "996089968235",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:996089968235:web:1e37505810cdd1477c632e"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_FIREBASE_API_KEY": "AIzaSyAmsyXc1jq7sc4g9xTZFIa8Bd0Q9Ypk3TY",
+        "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN": "caffora-1c2a1.firebaseapp.com",
+        "EXPO_PUBLIC_FIREBASE_PROJECT_ID": "caffora-1c2a1",
+        "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET": "caffora-1c2a1.firebasestorage.app",
+        "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "996089968235",
+        "EXPO_PUBLIC_FIREBASE_APP_ID": "1:996089968235:web:1e37505810cdd1477c632e"
+      }
     }
   },
   "submit": {
