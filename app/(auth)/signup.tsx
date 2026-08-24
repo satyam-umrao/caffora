@@ -95,7 +95,10 @@ export default function SignupScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={() => router.back()} style={styles.back}>
+        <Pressable
+          onPress={() => router.replace("/(auth)/login")}
+          style={styles.back}
+        >
           <Text style={[styles.backText, { color: text }]}>‹</Text>
         </Pressable>
 

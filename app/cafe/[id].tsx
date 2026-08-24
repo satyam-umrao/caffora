@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,29 +13,21 @@ import {
   RefreshControl,
   ScrollView,
   Share,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { makePhoneCall } from "../../src/services/deepLinks/phone";
 import { openDirections } from "../../src/services/deepLinks/directions";
-import { openWhatsApp } from "../../src/services/deepLinks/whatsapp";
+import { makePhoneCall } from "../../src/services/deepLinks/phone";
 import { openWebsite } from "../../src/services/deepLinks/website";
-import {
-  Cafe,
-  getCafeById,
-  OpeningHours,
-} from "../../src/services/firebase/cafes";
+import { openWhatsApp } from "../../src/services/deepLinks/whatsapp";
+import { Cafe, getCafeById } from "../../src/services/firebase/cafes";
 import {
   isCafeSaved,
   toggleCafeSaved,
 } from "../../src/services/firebase/favorites";
-import {
-  getCafeReviews,
-  Review,
-} from "../../src/services/firebase/reviews";
+import { getCafeReviews, Review } from "../../src/services/firebase/reviews";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -94,9 +86,15 @@ export default function CafeDetailScreen() {
     }
   }, [cafeId]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // Reload the café and reviews whenever this screen becomes active again.
+  // This is important after returning from the Write Review screen, because
+  // the newly-created review is in Firestore but this screen may still have
+  // the previous reviews array in memory.
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData]),
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -198,7 +196,7 @@ export default function CafeDetailScreen() {
             tintColor="#B95E2E"
           />
         }
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: 65 }}
       >
         {/* ================================================= */}
         {/* HERO IMAGE CAROUSEL */}
@@ -265,7 +263,9 @@ export default function CafeDetailScreen() {
                 <View
                   key={`dot-${i}`}
                   className={`h-2 rounded-full ${
-                    activeImageIndex === i ? "w-6 bg-[#B95E2E]" : "w-2 bg-white/60"
+                    activeImageIndex === i
+                      ? "w-6 bg-[#B95E2E]"
+                      : "w-2 bg-white/60"
                   }`}
                 />
               ))}
@@ -321,7 +321,9 @@ export default function CafeDetailScreen() {
             <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
               <Ionicons name="call-outline" size={20} color="#B95E2E" />
             </View>
-            <Text className="mt-1.5 text-xs font-bold text-[#302720]">Call</Text>
+            <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+              Call
+            </Text>
           </Pressable>
 
           <Pressable
@@ -345,7 +347,9 @@ export default function CafeDetailScreen() {
             <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
               <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
             </View>
-            <Text className="mt-1.5 text-xs font-bold text-[#302720]">Chat</Text>
+            <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+              Chat
+            </Text>
           </Pressable>
 
           {cafeWebsite ? (
@@ -449,8 +453,7 @@ export default function CafeDetailScreen() {
               {DAYS.map((day) => {
                 const hours = (cafe.openingHours as any)[day];
                 const isToday = day === currentDayKey;
-                const formattedDay =
-                  day.charAt(0).toUpperCase() + day.slice(1);
+                const formattedDay = day.charAt(0).toUpperCase() + day.slice(1);
 
                 return (
                   <View
@@ -522,7 +525,9 @@ export default function CafeDetailScreen() {
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Ionicons
                     key={s}
-                    name={s <= Math.round(cafe.rating) ? "star" : "star-outline"}
+                    name={
+                      s <= Math.round(cafe.rating) ? "star" : "star-outline"
+                    }
                     size={11}
                     color="#F6B94A"
                   />
