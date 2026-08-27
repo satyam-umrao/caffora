@@ -13,7 +13,7 @@ import {
 import { auth } from "../src/services/firebase/config";
 
 const SPLASH_IMAGE =
-  "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=85&w=1200&auto=format&fit=crop";
+  "https://plus.unsplash.com/premium_photo-1673545518947-ddf3240090b1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Y2FmZXxlbnwwfHwwfHx8MA%3D%3D";
 
 export default function Index() {
   const scheme = useColorScheme();
@@ -88,10 +88,6 @@ export default function Index() {
           },
         ]}
       >
-        <View style={styles.logoIcon}>
-          <Text style={styles.coffeeIcon}>☕</Text>
-        </View>
-
         <Text
           style={[
             styles.logo,
@@ -145,7 +141,7 @@ const styles = StyleSheet.create({
   },
 
   logo: {
-    fontSize: 46,
+    fontSize: 70,
     fontWeight: "800",
     letterSpacing: -1.5,
   },
