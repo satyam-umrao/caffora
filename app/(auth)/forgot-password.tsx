@@ -142,7 +142,7 @@ export default function ForgotPasswordScreen() {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.resetButtonText}>Send Reset Link</Text>
+              <Text style={styles.resetButtonText}>Send Reset Link </Text>
             )}
           </Pressable>
         </View>
@@ -154,7 +154,7 @@ export default function ForgotPasswordScreen() {
         >
           <Text style={styles.loginArrow}>←</Text>
 
-          <Text style={styles.loginText}>Back to Sign In</Text>
+          <Text style={styles.loginText}>Back to Sign In </Text>
         </Pressable>
 
         {/* Footer */}
@@ -165,7 +165,7 @@ export default function ForgotPasswordScreen() {
 
           <Text style={styles.logo}>Caffora</Text>
 
-          <Text style={styles.tagline}>Discover. Book. Enjoy.</Text>
+          <Text style={styles.tagline}>Discover. Book. Enjoy. </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -175,7 +175,7 @@ export default function ForgotPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#17120F",
+    backgroundColor: "#FAF7F3",
   },
 
   content: {
@@ -189,14 +189,14 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: "#211A16",
+    backgroundColor: "#FAF8F5",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 35,
   },
 
   backText: {
-    color: "#FFF8F2",
+    color: "#1D1815",
     fontSize: 32,
     lineHeight: 34,
     marginTop: -3,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "#2A201B",
+    backgroundColor: "#FAF8F5",
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
@@ -218,14 +218,14 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#FFF8F2",
+    color: "#1D1815",
     fontSize: 29,
     fontWeight: "800",
     textAlign: "center",
   },
 
   description: {
-    color: "#9E8B7D",
+    color: "#776B64",
     fontSize: 14,
     lineHeight: 22,
     textAlign: "center",
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    color: "#E8DCD3",
+    color: "#776B64",
     fontSize: 13,
     fontWeight: "600",
     marginBottom: 9,
@@ -248,47 +248,47 @@ const styles = StyleSheet.create({
   input: {
     height: 56,
     borderWidth: 1,
-    borderColor: "#40352F",
+    borderColor: "#E5DFDA",
     borderRadius: 15,
-    backgroundColor: "#211A16",
-    color: "#FFF8F2",
+    backgroundColor: "#FAF8F5",
+    color: "#1D1815",
     paddingHorizontal: 16,
     fontSize: 15,
   },
 
   errorBox: {
-    backgroundColor: "#351F1B",
-    borderWidth: 1,
-    borderColor: "#67352B",
+    backgroundColor: "#FAF8F5",
+    borderWidth: 0.5,
+    borderColor: "red",
     borderRadius: 13,
     padding: 13,
     marginTop: 15,
   },
 
   errorText: {
-    color: "#F0A99A",
+    color: "red",
     fontSize: 13,
     lineHeight: 19,
   },
 
   successBox: {
-    backgroundColor: "#1D3025",
+    backgroundColor: "#FAF8F5",
     borderWidth: 1,
-    borderColor: "#31553E",
+    borderColor: "green",
     borderRadius: 13,
     padding: 14,
     marginTop: 15,
   },
 
   successTitle: {
-    color: "#B9E0C5",
+    color: "green",
     fontSize: 14,
     fontWeight: "800",
     marginBottom: 5,
   },
 
   successText: {
-    color: "#9CC9AA",
+    color: "green",
     fontSize: 12,
     lineHeight: 18,
   },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
   resetButton: {
     height: 58,
     borderRadius: 17,
-    backgroundColor: "#C87941",
+    backgroundColor: "#B95E2E",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 22,
@@ -321,13 +321,13 @@ const styles = StyleSheet.create({
   },
 
   loginArrow: {
-    color: "#D18A54",
+    color: "#B95E2E",
     fontSize: 18,
     marginRight: 8,
   },
 
   loginText: {
-    color: "#D18A54",
+    color: "#B95E2E",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#C87941",
+    backgroundColor: "#B95E2E",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 6,
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   },
 
   tagline: {
-    color: "#665A52",
+    color: "#1D1815",
     fontSize: 10,
     marginTop: 3,
   },

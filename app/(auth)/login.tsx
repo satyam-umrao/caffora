@@ -28,11 +28,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const bg = isDark ? "#17120F" : "#FAF8F5";
-  const text = isDark ? "#FFF9F5" : "#1D1815";
-  const secondary = isDark ? "#A99A91" : "#776B64";
-  const inputBg = isDark ? "#211A16" : "#FFFFFF";
-  const border = isDark ? "#40342D" : "#E5DFDA";
+  const bg = "#FAF8F5";
+  const text = "#1D1815";
+  const secondary = "#776B64";
+  const inputBg = "#FFFFFF";
+  const border = "#E5DFDA";
 
   const handleLogin = async () => {
     setError("");
@@ -174,7 +174,7 @@ export default function LoginScreen() {
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.buttonText}>Continue</Text>
+                <Text style={styles.buttonText}>Continue </Text>
               )}
             </Pressable>
           </View>
@@ -185,7 +185,7 @@ export default function LoginScreen() {
             </Text>
 
             <Pressable onPress={() => router.replace("/signup")}>
-              <Text style={styles.signup}>Sign Up</Text>
+              <Text style={styles.signup}>Sign Up </Text>
             </Pressable>
           </View>
         </View>

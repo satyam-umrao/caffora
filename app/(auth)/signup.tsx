@@ -28,11 +28,11 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const bg = isDark ? "#17120F" : "#FAF8F5";
-  const text = isDark ? "#FFF9F5" : "#1D1815";
-  const secondary = isDark ? "#A99A91" : "#776B64";
-  const inputBg = isDark ? "#211A16" : "#FFFFFF";
-  const border = isDark ? "#40342D" : "#E5DFDA";
+  const bg = "#FAF8F5";
+  const text = "#1D1815";
+  const secondary = "#776B64";
+  const inputBg = "#FFFFFF";
+  const border = "#E5DFDA";
 
   const handleSignup = async () => {
     setError("");
@@ -182,18 +182,18 @@ export default function SignupScreen() {
             {loading ? (
               <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
+              <Text style={styles.buttonText}>Create Account </Text>
             )}
           </Pressable>
         </View>
 
         <View style={styles.loginRow}>
           <Text style={[styles.loginLabel, { color: secondary }]}>
-            Already have an account?
+            Already have an account?{" "}
           </Text>
 
           <Pressable onPress={() => router.replace("/login")}>
-            <Text style={styles.login}>Login</Text>
+            <Text style={styles.login}>Login </Text>
           </Pressable>
         </View>
       </ScrollView>

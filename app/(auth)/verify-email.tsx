@@ -29,11 +29,11 @@ export default function VerifyEmailScreen() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const bg = isDark ? "#17120F" : "#FAF8F5";
-  const text = isDark ? "#FFF9F5" : "#1D1815";
-  const secondary = isDark ? "#A99A91" : "#776B64";
-  const card = isDark ? "#211A16" : "#FFFFFF";
-  const border = isDark ? "#40342D" : "#E5DFDA";
+  const bg = "#FAF8F5";
+  const text = "#1D1815";
+  const secondary = "#776B64";
+  const card = "#FFFFFF";
+  const border = "#E5DFDA";
 
   useEffect(() => {
     setMessage("A verification link has been sent to your email.");
@@ -87,11 +87,11 @@ export default function VerifyEmailScreen() {
           style={[
             styles.iconCircle,
             {
-              backgroundColor: isDark ? "#34241C" : "#F2E5DC",
+              backgroundColor: "#F2E5DC",
             },
           ]}
         >
-          <Text style={styles.icon}>✉</Text>
+          <Text style={styles.icon}>✉️</Text>
         </View>
 
         <Text style={[styles.title, { color: text }]}>Verify Your Email</Text>

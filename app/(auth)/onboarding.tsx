@@ -52,9 +52,9 @@ export default function OnboardingScreen() {
 
   const listRef = useRef<FlatList>(null);
 
-  const background = isDark ? "#17120F" : "#FAF8F5";
-  const text = isDark ? "#FFF9F5" : "#1E1916";
-  const secondary = isDark ? "#B9AAA1" : "#756960";
+  const background = "#FAF8F5";
+  const text = "#1E1916";
+  const secondary = "#756960";
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, "true");
@@ -125,7 +125,7 @@ export default function OnboardingScreen() {
                 i === index
                   ? styles.activeDot
                   : {
-                      backgroundColor: isDark ? "#55443A" : "#DDD7D1",
+                      backgroundColor: "#DDD7D1",
                     },
               ]}
             />
