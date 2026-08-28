@@ -1,10 +1,6 @@
 import ReactNativeAsyncStorage from "@react-native-async-storage/async-storage";
 import { getApp, getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import {
-  getAuth,
-  initializeAuth,
-  type Auth,
-} from "firebase/auth";
+import { getAuth, initializeAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getStorage, type FirebaseStorage } from "firebase/storage";
 
@@ -13,21 +9,21 @@ import { getReactNativePersistence } from "@firebase/auth";
 
 const firebaseConfig = {
   apiKey:
-    process.env.EXPO_PUBLIC_FIREBASE_API_KEY ||
-    "AIzaSyAmsyXc1jq7sc4g9xTZFIa8Bd0Q9Ypk3TY",
+    process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "EXPO_PUBLIC_FIREBASE_API_KEY",
   authDomain:
     process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ||
-    "caffora-1c2a1.firebaseapp.com",
+    "EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN",
   projectId:
-    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "caffora-1c2a1",
+    process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID ||
+    "EXPO_PUBLIC_FIREBASE_PROJECT_ID",
   storageBucket:
     process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET ||
-    "caffora-1c2a1.firebasestorage.app",
+    "EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET",
   messagingSenderId:
-    process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "996089968235",
+    process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID ||
+    "EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID",
   appId:
-    process.env.EXPO_PUBLIC_FIREBASE_APP_ID ||
-    "1:996089968235:web:1e37505810cdd1477c632e",
+    process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "EXPO_PUBLIC_FIREBASE_APP_ID",
 };
 
 const app: FirebaseApp = getApps().length

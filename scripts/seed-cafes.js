@@ -3,7 +3,6 @@ const { getFirestore } = require("firebase-admin/firestore");
 const path = require("path");
 
 const serviceAccount = require(
-  // path.join(__dirname, "caffora-1c2a1-firebase-adminsdk-fbsvc-69fc1af51a.json"),
   path.resolve(
     process.cwd(),
     "scripts",
