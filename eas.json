@@ -1,21 +1,36 @@
 {
   "cli": {
     "version": ">= 16.28.0",
-    "appVersionSource": "remote"
+    "appVersionSource": "remote",
+    "api":{
+      // your api keys
+    }
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+    "api":{
+      // your api keys
+    }
     },
     "preview": {
       "distribution": "internal",
+    "api":{
+      // your api keys
+    }
     },
     "production": {
       "autoIncrement": true,
+    "api":{
+      // your api keys
+    }
     }
   },
   "submit": {
-    "production": {}
+    "production": {},
+    "api":{
+      // your api keys
+    }
   }
 }
