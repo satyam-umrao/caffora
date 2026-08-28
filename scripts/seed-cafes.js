@@ -6,7 +6,7 @@ const serviceAccount = require(
   path.resolve(
     process.cwd(),
     "scripts",
-    "caffora-1c2a1-firebase-adminsdk-fbsvc-69fc1af51a.json",
+    "Firebase Admin SDK private key JSON file name.json",
   ),
 );
 
