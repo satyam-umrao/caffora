@@ -7,6 +7,9 @@ import { getStorage, type FirebaseStorage } from "firebase/storage";
 // @ts-ignore - getReactNativePersistence is exported via the react-native package condition
 import { getReactNativePersistence } from "@firebase/auth";
 
+// NOTE FOR DEVELOPERS:
+// Configure your Firebase credentials in the `.env` file at the project root.
+// Copy `.env.example` to `.env` and fill in your Firebase Web App values.
 const firebaseConfig = {
   apiKey:
     process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "EXPO_PUBLIC_FIREBASE_API_KEY",

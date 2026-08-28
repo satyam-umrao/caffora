@@ -2,11 +2,15 @@ const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const path = require("path");
 
+// NOTE FOR DEVELOPERS:
+// 1. Download your Firebase Admin SDK service account key from:
+//    Firebase Console -> Project Settings -> Service accounts -> "Generate new private key"
+// 2. Place the JSON file in the `scripts/` folder and name it `serviceAccountKey.json` (or update the filename below).
 const serviceAccount = require(
   path.resolve(
     process.cwd(),
     "scripts",
-    "Firebase Admin SDK private key JSON file name.json",
+    "serviceAccountKey.json", // <-- Replace with your service account key file
   ),
 );
 

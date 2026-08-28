@@ -20,7 +20,7 @@
       ],
       "api_key": [
         {
-          "current_key": "your api key"
+          "current_key": "YOUR_FIREBASE_ANDROID_API_KEY"
         }
       ],
       "services": {
