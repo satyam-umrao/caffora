@@ -2,8 +2,8 @@
 
 <div align="center">
 
-![Expo](https://img.shields.io/badge/Expo-v54.0.0-blue?logo=expo&logoColor=white)
-![React Native](https://img.shields.io/badge/React%20Native-0.81.5-61DAFB?logo=react&logoColor=black)
+![Expo](https://img.shields.io/badge/Expo-v57.0.0-blue?logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React%20Native-0.86.3-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase-v12-FFCA28?logo=firebase&logoColor=black)
 ![TailwindCSS](https://img.shields.io/badge/NativeWind-v4-38B2AC?logo=tailwindcss&logoColor=white)
@@ -69,9 +69,9 @@
 
 | Domain | Technology | Description |
 | :--- | :--- | :--- |
-| **Framework** | [Expo](https://expo.dev/) (SDK 54) | React Native framework & tooling |
+| **Framework** | [Expo](https://expo.dev/) (SDK 57) | React Native framework & tooling |
 | **Language** | [TypeScript](https://www.typescriptlang.org/) | Strict static type checking |
-| **Routing** | [Expo Router](https://docs.expo.dev/router/introduction/) (v6) | File-based navigation with tabs & modals |
+| **Routing** | [Expo Router](https://docs.expo.dev/router/introduction/) (v57) | File-based navigation with tabs & modals |
 | **Styling** | [NativeWind](https://www.nativewind.dev/) (v4) / Tailwind CSS | Utility-first mobile styling |
 | **Backend & DB** | [Firebase](https://firebase.google.com/) (v12) | Auth, Firestore (NoSQL), Cloud Storage |
 | **State & Data** | [TanStack Query](https://tanstack.com/query) & [Zustand](https://zustand-demo.pmnd.rs/) | Server caching & global state management |
