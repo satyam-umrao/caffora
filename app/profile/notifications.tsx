@@ -207,7 +207,7 @@ export default function NotificationsScreen() {
               </View>
 
               <Text className="mt-4 text-lg font-black text-[#241C18]">
-                You're all caught up!
+                {"You're all caught up!"}
               </Text>
 
               <Text className="mt-1 text-center text-xs leading-relaxed text-[#8A7D75]">

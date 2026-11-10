@@ -181,7 +181,7 @@ export default function LoginScreen() {
 
           <View style={styles.signupRow}>
             <Text style={[styles.signupLabel, { color: secondary }]}>
-              Don't have an account?
+              {"Don't have an account?"}
             </Text>
 
             <Pressable onPress={() => router.replace("/signup")}>

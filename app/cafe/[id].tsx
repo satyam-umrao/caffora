@@ -171,7 +171,7 @@ export default function CafeDetailScreen() {
           {error || "Café Not Found"}
         </Text>
         <Text className="mt-2 text-center text-sm text-[#8A7D75]">
-          We couldn't load this café. It may have been moved or removed.
+          {"We couldn't load this café. It may have been moved or removed."}
         </Text>
         <Pressable
           onPress={() => router.back()}

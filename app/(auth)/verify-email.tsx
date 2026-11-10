@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
+
   View,
 } from "react-native";
 
@@ -15,8 +15,8 @@ import {
 } from "../../src/services/firebase/auth";
 
 export default function VerifyEmailScreen() {
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+
+
 
   const params = useLocalSearchParams<{
     email?: string;
@@ -26,7 +26,7 @@ export default function VerifyEmailScreen() {
 
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState("A verification link has been sent to your email.");
   const [error, setError] = useState("");
 
   const bg = "#FAF8F5";
@@ -35,9 +35,9 @@ export default function VerifyEmailScreen() {
   const card = "#FFFFFF";
   const border = "#E5DFDA";
 
-  useEffect(() => {
-    setMessage("A verification link has been sent to your email.");
-  }, []);
+
+
+
 
   const resend = async () => {
     try {
@@ -97,7 +97,7 @@ export default function VerifyEmailScreen() {
         <Text style={[styles.title, { color: text }]}>Verify Your Email</Text>
 
         <Text style={[styles.description, { color: secondary }]}>
-          We've sent a verification link to
+          {"We've sent a verification link to"}
         </Text>
 
         <Text style={[styles.email, { color: text }]}>
@@ -129,7 +129,7 @@ export default function VerifyEmailScreen() {
           <Text style={styles.infoIcon}>💡</Text>
 
           <Text style={[styles.infoText, { color: secondary }]}>
-            Don't see the email? Check your spam or promotions folder.
+            {"Don't see the email? Check your spam or promotions folder."}
           </Text>
         </View>
 
@@ -145,7 +145,7 @@ export default function VerifyEmailScreen() {
           {checking ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
-            <Text style={styles.primaryText}>I've Verified My Email</Text>
+            <Text style={styles.primaryText}>{"I've Verified My Email"}</Text>
           )}
         </Pressable>
 

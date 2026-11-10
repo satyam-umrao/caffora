@@ -10,7 +10,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  useColorScheme,
+
   View,
 } from "react-native";
 
@@ -45,8 +45,8 @@ const slides = [
 ];
 
 export default function OnboardingScreen() {
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+
+
 
   const [index, setIndex] = useState(0);
 

@@ -262,5 +262,7 @@ git push origin work
 
 This project is licensed under the MIT License — feel free to modify and build upon it.
 
-
+<div align="center">
+  <sub>Built with ❤️ by the <b>Caffora Team</b></sub>
+</div>
 

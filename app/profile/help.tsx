@@ -224,7 +224,7 @@ export default function HelpSupportScreen() {
               Send Us a Message
             </Text>
             <Text className="mt-1 text-xs text-[#8A7D75]">
-              Have a question or feedback? We'd love to hear from you.
+              {"Have a question or feedback? We'd love to hear from you."}
             </Text>
 
             {/* Category selection */}

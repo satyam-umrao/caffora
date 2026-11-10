@@ -3,7 +3,7 @@ import { router } from "expo-router";
 import React from "react";
 import {
   Alert,
-  Linking,
+
   Pressable,
   ScrollView,
   Text,
@@ -76,8 +76,8 @@ export default function AboutScreen() {
           <Text className="text-sm font-black text-[#241C18]">Our Mission</Text>
           <Text className="mt-2 text-xs leading-relaxed text-[#5E514A]">
             Caffora was built for coffee lovers, remote creators, and café
-            enthusiasts. We believe finding the perfect coffee spot shouldn't be
-            a chore—whether you're looking for specialty single-origins, cozy
+            {"enthusiasts. We believe finding the perfect coffee spot shouldn't be"}
+            {"a chore—whether you're looking for specialty single-origins, cozy"}
             study corners, or lively brunch spots.
           </Text>
         </View>

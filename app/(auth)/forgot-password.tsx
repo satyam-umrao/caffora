@@ -91,7 +91,7 @@ export default function ForgotPasswordScreen() {
 
         <Text style={styles.description}>
           No worries. Enter the email address associated with your Caffora
-          account and we'll send you a link to reset your password.
+          {"account and we'll send you a link to reset your password."}
         </Text>
 
         {/* Form */}
@@ -127,7 +127,7 @@ export default function ForgotPasswordScreen() {
               <Text style={styles.successTitle}>Reset email sent</Text>
 
               <Text style={styles.successText}>
-                Check your inbox for a password reset link. Don't forget to
+                {"Check your inbox for a password reset link. Don't forget to"}
                 check your spam folder.
               </Text>
             </View>

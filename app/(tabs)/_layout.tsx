@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import { Heart, Home, Search, User } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Animated,
   LayoutChangeEvent,
@@ -10,7 +10,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 
 const TAB_CONFIG = {
   index: { label: "Home", icon: Home },
@@ -30,31 +30,25 @@ type CustomTabBarProps = {
 // Fixed width for the animated background highlight
 
 function CustomTabBar({ state, navigation }: CustomTabBarProps) {
-  const insets = useSafeAreaInsets();
   const [barWidth, setBarWidth] = useState(0);
 
   const activeRouteName = state.routes[state.index]?.name;
   const foundIndex = VISIBLE_TAB_KEYS.indexOf(activeRouteName);
-  const lastValidIndex = useRef(0);
+  const targetIndex = foundIndex !== -1 ? foundIndex : 0;
 
-  if (foundIndex !== -1) {
-    lastValidIndex.current = foundIndex;
-  }
-
-  const activeGliderIndex =
-    foundIndex !== -1 ? foundIndex : lastValidIndex.current;
-
-  const gliderAnim = useRef(new Animated.Value(activeGliderIndex)).current;
+  const [gliderAnim] = useState(() => new Animated.Value(targetIndex));
 
   useEffect(() => {
-    Animated.spring(gliderAnim, {
-      toValue: activeGliderIndex,
-      damping: 18,
-      stiffness: 190,
-      mass: 0.7,
-      useNativeDriver: true,
-    }).start();
-  }, [activeGliderIndex, gliderAnim]);
+    if (foundIndex !== -1) {
+      Animated.spring(gliderAnim, {
+        toValue: foundIndex,
+        damping: 18,
+        stiffness: 190,
+        mass: 0.7,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [foundIndex, gliderAnim]);
 
   const numTabs = 4;
   const tabWidth = barWidth > 0 ? barWidth / numTabs : 0;

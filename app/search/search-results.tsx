@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -27,21 +27,16 @@ export default function SearchResultsScreen() {
 
   const searchQuery = typeof query === "string" ? query.trim() : "";
 
-  useEffect(() => {
-    runSearch();
-    loadSaved();
-  }, [searchQuery]);
-
-  const loadSaved = async () => {
+  const loadSaved = useCallback(async () => {
     try {
       const ids = await getSavedCafeIds();
       setSavedIds(ids);
     } catch (err) {
       console.error("Load saved error:", err);
     }
-  };
+  }, []);
 
-  const runSearch = async () => {
+  const runSearch = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -54,7 +49,12 @@ export default function SearchResultsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchQuery]);
+
+  useEffect(() => {
+    runSearch();
+    loadSaved();
+  }, [runSearch, loadSaved]);
 
   const handleToggleSave = async (cafeId: string) => {
     try {
@@ -261,8 +261,8 @@ export default function SearchResultsScreen() {
               </Text>
 
               <Text className="mt-2 text-center text-sm leading-5 text-[#81746C]">
-                We couldn't find any cafés matching{" "}
-                <Text className="font-semibold">"{searchQuery}"</Text>.
+                {"We couldn't find any cafés matching "}
+                <Text className="font-semibold">{`"${searchQuery}"`}</Text>.
               </Text>
 
               <Pressable

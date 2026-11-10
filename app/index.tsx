@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Animated,
   ImageBackground,
@@ -19,8 +19,8 @@ export default function Index() {
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
 
-  const scale = useRef(new Animated.Value(0.82)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [scale] = useState(() => new Animated.Value(0.82));
+  const [opacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.parallel([
