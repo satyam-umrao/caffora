@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { sendPasswordResetEmail } from "firebase/auth";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,8 +14,12 @@ import {
 } from "react-native";
 
 import { auth } from "../../src/services/firebase/config";
+import { useTheme, ThemeColors } from "../../src/context/ThemeContext";
 
 export default function ForgotPasswordScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -106,7 +110,7 @@ export default function ForgotPasswordScreen() {
               setSent(false);
             }}
             placeholder="you@example.com"
-            placeholderTextColor="#806F64"
+            placeholderTextColor={colors.muted}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -172,195 +176,196 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FAF7F3",
-  },
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
 
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 35,
-  },
+    content: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
+      paddingTop: 48,
+      paddingBottom: 35,
+    },
 
-  backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#FAF8F5",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 35,
-  },
+    backButton: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.cardAlt,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 35,
+    },
 
-  backText: {
-    color: "#1D1815",
-    fontSize: 32,
-    lineHeight: 34,
-    marginTop: -3,
-  },
+    backText: {
+      color: colors.text,
+      fontSize: 32,
+      lineHeight: 34,
+      marginTop: -3,
+    },
 
-  iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#FAF8F5",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginBottom: 26,
-  },
+    iconCircle: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: colors.cardAlt,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "center",
+      marginBottom: 26,
+    },
 
-  icon: {
-    fontSize: 40,
-  },
+    icon: {
+      fontSize: 40,
+    },
 
-  title: {
-    color: "#1D1815",
-    fontSize: 29,
-    fontWeight: "800",
-    textAlign: "center",
-  },
+    title: {
+      color: colors.text,
+      fontSize: 29,
+      fontWeight: "800",
+      textAlign: "center",
+    },
 
-  description: {
-    color: "#776B64",
-    fontSize: 14,
-    lineHeight: 22,
-    textAlign: "center",
-    marginTop: 12,
-    maxWidth: 340,
-    alignSelf: "center",
-  },
+    description: {
+      color: colors.muted,
+      fontSize: 14,
+      lineHeight: 22,
+      textAlign: "center",
+      marginTop: 12,
+      maxWidth: 340,
+      alignSelf: "center",
+    },
 
-  form: {
-    marginTop: 35,
-  },
+    form: {
+      marginTop: 35,
+    },
 
-  label: {
-    color: "#776B64",
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 9,
-  },
+    label: {
+      color: colors.muted,
+      fontSize: 13,
+      fontWeight: "600",
+      marginBottom: 9,
+    },
 
-  input: {
-    height: 56,
-    borderWidth: 1,
-    borderColor: "#E5DFDA",
-    borderRadius: 15,
-    backgroundColor: "#FAF8F5",
-    color: "#1D1815",
-    paddingHorizontal: 16,
-    fontSize: 15,
-  },
+    input: {
+      height: 56,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 15,
+      backgroundColor: colors.surface,
+      color: colors.text,
+      paddingHorizontal: 16,
+      fontSize: 15,
+    },
 
-  errorBox: {
-    backgroundColor: "#FAF8F5",
-    borderWidth: 0.5,
-    borderColor: "red",
-    borderRadius: 13,
-    padding: 13,
-    marginTop: 15,
-  },
+    errorBox: {
+      backgroundColor: isDark ? "#381816" : "#FDEAE8",
+      borderWidth: 0.5,
+      borderColor: isDark ? "#5C2622" : "#F8C8C4",
+      borderRadius: 13,
+      padding: 13,
+      marginTop: 15,
+    },
 
-  errorText: {
-    color: "red",
-    fontSize: 13,
-    lineHeight: 19,
-  },
+    errorText: {
+      color: "#D95445",
+      fontSize: 13,
+      lineHeight: 19,
+    },
 
-  successBox: {
-    backgroundColor: "#FAF8F5",
-    borderWidth: 1,
-    borderColor: "green",
-    borderRadius: 13,
-    padding: 14,
-    marginTop: 15,
-  },
+    successBox: {
+      backgroundColor: isDark ? "#17341E" : "#EBF7EE",
+      borderWidth: 1,
+      borderColor: isDark ? "#2E7A3A" : "#3FB950",
+      borderRadius: 13,
+      padding: 14,
+      marginTop: 15,
+    },
 
-  successTitle: {
-    color: "green",
-    fontSize: 14,
-    fontWeight: "800",
-    marginBottom: 5,
-  },
+    successTitle: {
+      color: isDark ? "#4ADE80" : "#2E7A3A",
+      fontSize: 14,
+      fontWeight: "800",
+      marginBottom: 5,
+    },
 
-  successText: {
-    color: "green",
-    fontSize: 12,
-    lineHeight: 18,
-  },
+    successText: {
+      color: isDark ? "#4ADE80" : "#2E7A3A",
+      fontSize: 12,
+      lineHeight: 18,
+    },
 
-  resetButton: {
-    height: 58,
-    borderRadius: 17,
-    backgroundColor: "#B95E2E",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 22,
-  },
+    resetButton: {
+      height: 58,
+      borderRadius: 17,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 22,
+    },
 
-  disabledButton: {
-    opacity: 0.65,
-  },
+    disabledButton: {
+      opacity: 0.65,
+    },
 
-  resetButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
+    resetButtonText: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      fontWeight: "800",
+    },
 
-  loginButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 25,
-    paddingVertical: 12,
-  },
+    loginButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      marginTop: 25,
+      paddingVertical: 12,
+    },
 
-  loginArrow: {
-    color: "#B95E2E",
-    fontSize: 18,
-    marginRight: 8,
-  },
+    loginArrow: {
+      color: colors.primary,
+      fontSize: 18,
+      marginRight: 8,
+    },
 
-  loginText: {
-    color: "#B95E2E",
-    fontSize: 14,
-    fontWeight: "700",
-  },
+    loginText: {
+      color: colors.primary,
+      fontSize: 14,
+      fontWeight: "700",
+    },
 
-  footer: {
-    alignItems: "center",
-    marginTop: "auto",
-    paddingTop: 35,
-  },
+    footer: {
+      alignItems: "center",
+      marginTop: "auto",
+      paddingTop: 35,
+    },
 
-  logoCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#B95E2E",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 6,
-  },
+    logoCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 6,
+    },
 
-  logoEmoji: {
-    fontSize: 18,
-  },
+    logoEmoji: {
+      fontSize: 18,
+    },
 
-  logo: {
-    color: "#C87941",
-    fontSize: 15,
-    fontWeight: "800",
-  },
+    logo: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "800",
+    },
 
-  tagline: {
-    color: "#1D1815",
-    fontSize: 10,
-    marginTop: 3,
-  },
-});
+    tagline: {
+      color: colors.muted,
+      fontSize: 10,
+      marginTop: 3,
+    },
+  });

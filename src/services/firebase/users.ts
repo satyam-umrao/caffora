@@ -3,7 +3,6 @@ import {
   getDoc,
   serverTimestamp,
   setDoc,
-  updateDoc,
 } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
 
@@ -12,6 +11,7 @@ import type {
   UpdateUserProfileInput,
   UserPreferences,
   UserProfile,
+  UserRole,
 } from "../../types/profile";
 
 export const DEFAULT_PREFERENCES: UserPreferences = {
@@ -20,6 +20,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   promotions: false,
   locationServices: true,
   hapticFeedback: true,
+  theme: "system",
 };
 
 /**
@@ -40,6 +41,8 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         displayName: data.displayName || auth.currentUser?.displayName || "Caffora User",
         email: data.email || auth.currentUser?.email || "",
         phoneNumber: data.phoneNumber || auth.currentUser?.phoneNumber || "",
+        businessName: data.businessName || "",
+        role: (data.role as UserRole) || "customer",
         photoURL: data.photoURL || auth.currentUser?.photoURL || "",
         bio: data.bio || "",
         city: data.city || "",
@@ -49,7 +52,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       };
     }
 
-    // Initialize with current auth data if document hasn't been created yet
+    // Initialize with current auth data if document hasn't been created yet (default to customer)
     const currentUser = auth.currentUser;
     if (currentUser && currentUser.uid === userId) {
       const initialProfile: UserProfile = {
@@ -57,11 +60,13 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         displayName: currentUser.displayName || "Caffora User",
         email: currentUser.email || "",
         phoneNumber: currentUser.phoneNumber || "",
+        role: "customer",
         photoURL: currentUser.photoURL || "",
         bio: "",
         city: "",
         preferences: DEFAULT_PREFERENCES,
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       await setDoc(userRef, initialProfile, { merge: true });
@@ -77,6 +82,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
 /**
  * Update user profile in Firebase Auth and Firestore (`users/{uid}`).
+ * Note: Role cannot be modified through ordinary profile updates.
  */
 export async function updateUserProfile(
   userId: string,
@@ -88,13 +94,17 @@ export async function updateUserProfile(
       throw new Error("UNAUTHORIZED");
     }
 
+    // Safeguard: explicitly prevent modifying role through ordinary updates
+    const safeInput = { ...input };
+    delete (safeInput as Record<string, unknown>).role;
+
     // Update Firebase Auth profile if displayName or photoURL changed
     const authUpdates: { displayName?: string; photoURL?: string } = {};
-    if (input.displayName !== undefined) {
-      authUpdates.displayName = input.displayName.trim();
+    if (safeInput.displayName !== undefined) {
+      authUpdates.displayName = safeInput.displayName.trim();
     }
-    if (input.photoURL !== undefined) {
-      authUpdates.photoURL = input.photoURL.trim();
+    if (safeInput.photoURL !== undefined) {
+      authUpdates.photoURL = safeInput.photoURL.trim();
     }
 
     if (Object.keys(authUpdates).length > 0) {
@@ -106,7 +116,7 @@ export async function updateUserProfile(
     await setDoc(
       userRef,
       {
-        ...input,
+        ...safeInput,
         email: currentUser.email,
         updatedAt: serverTimestamp(),
       },

@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Core helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // USERS COLLECTION
+    // users/{uid}
+    match /users/{userId} {
+      // Authenticated users can read profiles
+      allow read: if isAuthenticated();
+      
+      // User can create their initial profile document matching their auth UID
+      // Role must strictly be 'customer' or 'cafe_owner'
+      allow create: if isUser(userId) 
+        && request.resource.data.role in ['customer', 'cafe_owner'];
+      
+      // User can update profile fields, but CANNOT alter their assigned role
+      allow update: if isUser(userId) 
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) 
+            || request.resource.data.role == resource.data.role);
+            
+      allow delete: if isUser(userId);
+    }
+    
+    // CAFES COLLECTION
+    // cafes/{cafeId}
+    match /cafes/{cafeId} {
+      // Anyone can browse cafés
+      allow read: if true;
+      
+      // Only authenticated owners/admins can create or manage their own cafés
+      allow create: if isAuthenticated() && (
+        request.resource.data.ownerId == request.auth.uid ||
+        request.auth.token.admin == true
+      );
+      
+      allow update: if isAuthenticated() && (
+        (resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == resource.data.ownerId) ||
+        request.auth.token.admin == true
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // BOOKINGS COLLECTION
+    // bookings/{bookingId}
+    match /bookings/{bookingId} {
+      // A customer can read their own bookings; a cafe owner can read bookings for their cafe
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.ownerId == request.auth.uid
+      );
+      
+      // Customers can create bookings only for themselves with initial status strictly 'pending'
+      allow create: if isAuthenticated() 
+        && (request.resource.data.userId == request.auth.uid || request.resource.data.customerId == request.auth.uid)
+        && request.resource.data.status == 'pending';
+      
+      // Update permissions:
+      // 1. Customer can cancel their own booking (cannot self-confirm)
+      // 2. Cafe owner can update booking status (accept/hold/reject) and add ownerNote
+      allow update: if isAuthenticated() && (
+        // Customer cancelling their own reservation
+        ((resource.data.userId == request.auth.uid || resource.data.customerId == request.auth.uid)
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.cafeId == resource.data.cafeId) ||
+        // Cafe owner responding to request
+        (resource.data.ownerId == request.auth.uid 
+          && request.resource.data.userId == resource.data.userId
+          && request.resource.data.ownerId == resource.data.ownerId
+          && request.resource.data.cafeId == resource.data.cafeId) ||
+        request.auth.token.admin == true
+      );
+    }
+    
+    // NOTIFICATIONS COLLECTION
+    // notifications/{notificationId}
+    match /notifications/{notificationId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
+    }
+    
+    // FAVORITES COLLECTION
+    // favorites/{favoriteId}
+    match /favorites/{favoriteId} {
+      allow read, write: if isAuthenticated() && (resource == null || resource.data.userId == request.auth.uid);
+    }
+    
+    // REVIEWS COLLECTION
+    // reviews/{reviewId}
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

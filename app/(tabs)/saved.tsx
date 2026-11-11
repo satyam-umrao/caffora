@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import { auth, db } from "../../src/services/firebase/config";
 
 type Cafe = {
@@ -40,6 +41,7 @@ type SavedCafe = Cafe & {
 };
 
 export default function SavedScreen() {
+  const { colors } = useTheme();
   const [cafes, setCafes] = useState<SavedCafe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,35 +60,33 @@ export default function SavedScreen() {
       const favoritesRef = collection(db, "users", currentUser.uid, "favorites");
       const favoriteSnapshot = await getDocs(favoritesRef);
 
-      const saved: SavedCafe[] = [];
-
-      for (const favoriteDoc of favoriteSnapshot.docs) {
+      const cafePromises = favoriteSnapshot.docs.map(async (favoriteDoc) => {
         const favoriteData = favoriteDoc.data();
         const cafeId = favoriteData.cafeId || favoriteDoc.id;
-
-        if (!cafeId) {
-          continue;
-        }
 
         const cafeRef = doc(db, "cafes", cafeId);
         const cafeSnapshot = await getDoc(cafeRef);
 
-        if (!cafeSnapshot.exists()) {
-          continue;
+        if (cafeSnapshot.exists()) {
+          const cafeData = cafeSnapshot.data() as Omit<Cafe, "id">;
+          return {
+            id: cafeSnapshot.id,
+            favoriteId: favoriteDoc.id,
+            ...cafeData,
+          } as SavedCafe;
         }
 
-        const cafeData = cafeSnapshot.data() as Cafe;
+        return null;
+      });
 
-        saved.push({
-          ...cafeData,
-          id: cafeSnapshot.id,
-          favoriteId: favoriteDoc.id,
-        });
-      }
+      const loadedCafes = await Promise.all(cafePromises);
+      const validCafes = loadedCafes.filter(
+        (cafe): cafe is SavedCafe => cafe !== null,
+      );
 
-      setCafes(saved);
+      setCafes(validCafes);
     } catch (error) {
-      console.error("Failed to load saved cafes:", error);
+      console.error("Error loading saved cafes:", error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -109,12 +109,12 @@ export default function SavedScreen() {
     if (!currentUser) return;
 
     try {
-      await deleteDoc(
-        doc(db, "users", currentUser.uid, "favorites", cafe.favoriteId),
+      setCafes((currentCafes) =>
+        currentCafes.filter((item) => item.favoriteId !== cafe.favoriteId),
       );
 
-      setCafes((current) =>
-        current.filter((item) => item.favoriteId !== cafe.favoriteId),
+      await deleteDoc(
+        doc(db, "users", currentUser.uid, "favorites", cafe.favoriteId),
       );
     } catch (error) {
       console.error(error);
@@ -143,38 +143,86 @@ export default function SavedScreen() {
   const currentUser = auth.currentUser;
 
   return (
-    <SafeAreaView edges={["top"]} className="flex-1 bg-[#FAF7F3]">
+    <SafeAreaView
+      edges={["top"]}
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
       {/* HEADER */}
-      <View className="px-5 pb-5 pt-4">
-        <View className="flex-row items-center justify-between">
+      <View style={{ paddingHorizontal: 20, paddingBottom: 20, paddingTop: 16 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <View>
-            <Text className="text-[12px] font-bold uppercase tracking-[0.7px] text-[#A09289]">
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: 0.7,
+                color: colors.textSecondary,
+              }}
+            >
               Your collection
             </Text>
 
-            <Text className="mt-1 text-[29px] font-black tracking-[-0.7px] text-[#281F1A]">
+            <Text
+              style={{
+                marginTop: 4,
+                fontSize: 29,
+                fontWeight: "900",
+                letterSpacing: -0.7,
+                color: colors.text,
+              }}
+            >
               Saved Cafes
             </Text>
           </View>
 
-          <View className="h-11 w-11 items-center justify-center rounded-[15px] bg-[#F7E4D9]">
-            <Ionicons name="heart" size={22} color="#B95E2E" />
+          <View
+            style={{
+              height: 44,
+              width: 44,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 15,
+              backgroundColor: colors.primarySoft,
+            }}
+          >
+            <Ionicons name="heart" size={22} color={colors.primary} />
           </View>
         </View>
 
-        <Text className="mt-2 text-sm text-[#897C73]">
+        <Text
+          style={{
+            marginTop: 8,
+            fontSize: 14,
+            color: colors.textSecondary,
+          }}
+        >
           Your favorite coffee spots in one place.
         </Text>
       </View>
 
-      <View className="h-px bg-[#EAE2DC]" />
+      <View style={{ height: 1, backgroundColor: colors.border }} />
 
       {/* CONTENT */}
       {loading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#B95E2E" />
+        <View
+          style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+        >
+          <ActivityIndicator size="large" color={colors.primary} />
 
-          <Text className="mt-3 text-sm text-[#8D8078]">
+          <Text
+            style={{
+              marginTop: 12,
+              fontSize: 14,
+              color: colors.textSecondary,
+            }}
+          >
             Loading saved cafes...
           </Text>
         </View>
@@ -189,17 +237,34 @@ export default function SavedScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#B95E2E"
+              tintColor={colors.primary}
             />
           }
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 120, paddingTop: 20 }}
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 120,
+            paddingTop: 20,
+          }}
         >
-          <View className="mb-4 flex-row items-center justify-between">
-            <Text className="text-base font-extrabold text-[#302720]">
+          <View
+            style={{
+              marginBottom: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: colors.text,
+              }}
+            >
               {cafes.length} {cafes.length === 1 ? "cafe" : "cafes"} saved
             </Text>
 
-            <Ionicons name="heart" size={17} color="#E0524D" />
+            <Ionicons name="heart" size={17} color={colors.danger} />
           </View>
 
           {cafes.map((cafe) => (
@@ -236,10 +301,26 @@ function SavedCafeCard({
   onPress: () => void;
   onRemove: () => void;
 }) {
+  const { colors, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row overflow-hidden rounded-[20px] border border-[#EEE4DD] bg-white p-2.5 shadow-sm"
+      style={{
+        marginBottom: 12,
+        flexDirection: "row",
+        overflow: "hidden",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        padding: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.3 : 0.05,
+        shadowRadius: 6,
+        elevation: 2,
+      }}
     >
       <Image
         source={{
@@ -247,39 +328,92 @@ function SavedCafeCard({
             cafe.image ||
             "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
         }}
-        className="h-[92px] w-[92px] rounded-[15px] bg-[#E9DED7]"
+        style={{
+          height: 92,
+          width: 92,
+          borderRadius: 15,
+          backgroundColor: colors.surfaceMuted,
+        }}
         resizeMode="cover"
       />
 
-      <View className="ml-3 flex-1 justify-center">
+      <View style={{ marginLeft: 12, flex: 1, justifyContent: "center" }}>
         <Text
-          className="text-[16px] font-extrabold text-[#2B211C]"
+          style={{
+            fontSize: 16,
+            fontWeight: "800",
+            color: colors.text,
+          }}
           numberOfLines={1}
         >
           {cafe.name}
         </Text>
 
-        <View className="mt-1 flex-row items-center">
-          <Ionicons name="location-outline" size={13} color="#8D8179" />
+        <View
+          style={{
+            marginTop: 4,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={13}
+            color={colors.textSecondary}
+          />
 
           <Text
-            className="ml-1 flex-1 text-[11px] text-[#8B7E76]"
+            style={{
+              marginLeft: 4,
+              flex: 1,
+              fontSize: 11,
+              color: colors.textSecondary,
+            }}
             numberOfLines={1}
           >
             {cafe.location}, {cafe.city}
           </Text>
         </View>
 
-        <View className="mt-2 flex-row items-center">
-          <View className="flex-row items-center rounded-[8px] bg-[#FFF5E4] px-2 py-1">
-            <Ionicons name="star" size={11} color="#F6B94A" />
+        <View
+          style={{
+            marginTop: 8,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              borderRadius: 8,
+              backgroundColor: isDark ? "#2F2312" : "#FFF5E4",
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+            }}
+          >
+            <Ionicons name="star" size={11} color={colors.star} />
 
-            <Text className="ml-1 text-[10px] font-extrabold text-[#77532D]">
+            <Text
+              style={{
+                marginLeft: 4,
+                fontSize: 10,
+                fontWeight: "800",
+                color: isDark ? "#F8C162" : "#77532D",
+              }}
+            >
               {cafe.rating.toFixed(1)}
             </Text>
           </View>
 
-          <Text className="ml-2 text-[10px] font-bold text-[#75675F]">
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 10,
+              fontWeight: "700",
+              color: colors.textSecondary,
+            }}
+          >
             {cafe.category}
           </Text>
         </View>
@@ -291,9 +425,14 @@ function SavedCafeCard({
           onRemove();
         }}
         hitSlop={10}
-        className="h-10 w-10 items-center justify-center"
+        style={{
+          height: 40,
+          width: 40,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        <Ionicons name="heart" size={21} color="#E0524D" />
+        <Ionicons name="heart" size={21} color={colors.danger} />
       </Pressable>
     </Pressable>
   );
@@ -304,25 +443,67 @@ function SavedCafeCard({
 /* ========================================================= */
 
 function EmptySaved() {
+  const { colors } = useTheme();
+
   return (
-    <View className="flex-1 items-center justify-center px-10">
-      <View className="h-[92px] w-[92px] items-center justify-center rounded-[30px] bg-[#F7E4D9]">
-        <Ionicons name="heart-outline" size={43} color="#B95E2E" />
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 40,
+      }}
+    >
+      <View
+        style={{
+          height: 92,
+          width: 92,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 30,
+          backgroundColor: colors.primarySoft,
+        }}
+      >
+        <Ionicons name="heart-outline" size={43} color={colors.primary} />
       </View>
 
-      <Text className="mt-6 text-center text-[21px] font-black text-[#302720]">
+      <Text
+        style={{
+          marginTop: 24,
+          textAlign: "center",
+          fontSize: 21,
+          fontWeight: "900",
+          color: colors.text,
+        }}
+      >
         No saved cafes yet
       </Text>
 
-      <Text className="mt-2 text-center text-sm leading-5 text-[#8C7E75]">
+      <Text
+        style={{
+          marginTop: 8,
+          textAlign: "center",
+          fontSize: 14,
+          lineHeight: 20,
+          color: colors.textSecondary,
+        }}
+      >
         Find a cafe you love and tap the heart to save it here.
       </Text>
 
       <Pressable
         onPress={() => router.push("/(tabs)/search")}
-        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5"
+        style={{
+          marginTop: 24,
+          borderRadius: 16,
+          backgroundColor: colors.primary,
+          paddingHorizontal: 28,
+          paddingVertical: 14,
+        }}
       >
-        <Text className="text-sm font-extrabold text-white">Explore Cafes</Text>
+        <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+          Explore Cafes
+        </Text>
       </Pressable>
     </View>
   );
@@ -333,25 +514,67 @@ function EmptySaved() {
 /* ========================================================= */
 
 function LoginRequired() {
+  const { colors } = useTheme();
+
   return (
-    <View className="flex-1 items-center justify-center px-10">
-      <View className="h-[92px] w-[92px] items-center justify-center rounded-[30px] bg-[#F7E4D9]">
-        <Ionicons name="person-outline" size={42} color="#B95E2E" />
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        paddingHorizontal: 40,
+      }}
+    >
+      <View
+        style={{
+          height: 92,
+          width: 92,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 30,
+          backgroundColor: colors.primarySoft,
+        }}
+      >
+        <Ionicons name="person-outline" size={42} color={colors.primary} />
       </View>
 
-      <Text className="mt-6 text-center text-[21px] font-black text-[#302720]">
+      <Text
+        style={{
+          marginTop: 24,
+          textAlign: "center",
+          fontSize: 21,
+          fontWeight: "900",
+          color: colors.text,
+        }}
+      >
         Sign in to save cafes
       </Text>
 
-      <Text className="mt-2 text-center text-sm leading-5 text-[#8C7E75]">
+      <Text
+        style={{
+          marginTop: 8,
+          textAlign: "center",
+          fontSize: 14,
+          lineHeight: 20,
+          color: colors.textSecondary,
+        }}
+      >
         Sign in to keep your favorite cafes synced with your account.
       </Text>
 
       <Pressable
         onPress={() => router.push("/(auth)/login")}
-        className="mt-6 rounded-[16px] bg-[#B95E2E] px-7 py-3.5"
+        style={{
+          marginTop: 24,
+          borderRadius: 16,
+          backgroundColor: colors.primary,
+          paddingHorizontal: 28,
+          paddingVertical: 14,
+        }}
       >
-        <Text className="text-sm font-extrabold text-white">Sign In</Text>
+        <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+          Sign In
+        </Text>
       </Pressable>
     </View>
   );

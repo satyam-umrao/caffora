@@ -18,8 +18,10 @@ import {
   getCafeReviews,
   Review,
 } from "../../src/services/firebase/reviews";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function CafeReviewsScreen() {
+  const { colors, isDark } = useTheme();
   const { cafeId } = useLocalSearchParams<{ cafeId: string }>();
 
   const id = typeof cafeId === "string" ? cafeId : Array.isArray(cafeId) ? cafeId[0] : "";
@@ -87,42 +89,67 @@ export default function CafeReviewsScreen() {
       : "Recently";
 
     return (
-      <View className="mb-3.5 rounded-2xl border border-[#EEE5DE] bg-white p-4 shadow-sm">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        }}
+        className="mb-3.5 rounded-2xl border p-4 shadow-sm"
+      >
         {/* User header */}
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center">
             {item.userAvatar ? (
               <Image
                 source={{ uri: item.userAvatar }}
-                className="h-10 w-10 rounded-full bg-[#EADFD7]"
+                style={{ backgroundColor: colors.cardAlt }}
+                className="h-10 w-10 rounded-full"
               />
             ) : (
-              <View className="h-10 w-10 items-center justify-center rounded-full bg-[#F5E6DC]">
-                <Text className="text-sm font-extrabold text-[#B95E2E]">
+              <View
+                style={{ backgroundColor: colors.chip }}
+                className="h-10 w-10 items-center justify-center rounded-full"
+              >
+                <Text
+                  style={{ color: colors.primary }}
+                  className="text-sm font-extrabold"
+                >
                   {(item.userName || "U").charAt(0).toUpperCase()}
                 </Text>
               </View>
             )}
 
             <View className="ml-3">
-              <Text className="text-sm font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-sm font-bold"
+              >
                 {item.userName}
               </Text>
-              <Text className="text-[11px] text-[#93867E]">{formattedDate}</Text>
+              <Text style={{ color: colors.muted }} className="text-[11px]">{formattedDate}</Text>
             </View>
           </View>
 
           {/* Rating badge */}
-          <View className="flex-row items-center rounded-lg bg-[#FFF5E4] px-2 py-1">
+          <View
+            style={{ backgroundColor: isDark ? "#2A1E14" : "#FFF5E4" }}
+            className="flex-row items-center rounded-lg px-2 py-1"
+          >
             <Ionicons name="star" size={12} color="#F6B94A" />
-            <Text className="ml-1 text-xs font-black text-[#77532D]">
+            <Text
+              style={{ color: isDark ? "#F6B94A" : "#77532D" }}
+              className="ml-1 text-xs font-black"
+            >
               {item.rating.toFixed(1)}
             </Text>
           </View>
         </View>
 
         {/* Comment */}
-        <Text className="mt-3 text-sm leading-relaxed text-[#5E514A]">
+        <Text
+          style={{ color: colors.text }}
+          className="mt-3 text-sm leading-relaxed"
+        >
           {item.comment}
         </Text>
 
@@ -133,7 +160,8 @@ export default function CafeReviewsScreen() {
               <Image
                 key={`rev-img-${idx}`}
                 source={{ uri: imgUrl }}
-                className="h-16 w-16 rounded-xl bg-[#EADFD7]"
+                style={{ backgroundColor: colors.cardAlt }}
+                className="h-16 w-16 rounded-xl"
                 resizeMode="cover"
               />
             ))}
@@ -145,9 +173,15 @@ export default function CafeReviewsScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#FAF7F3]">
-        <ActivityIndicator size="large" color="#B95E2E" />
-        <Text className="mt-3 text-sm font-semibold text-[#8A7D75]">
+      <SafeAreaView
+        style={{ backgroundColor: colors.background }}
+        className="flex-1 items-center justify-center"
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={{ color: colors.muted }}
+          className="mt-3 text-sm font-semibold"
+        >
           Loading reviews...
         </Text>
       </SafeAreaView>
@@ -155,24 +189,33 @@ export default function CafeReviewsScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Top Header */}
       <View className="flex-row items-center justify-between px-5 pb-3 pt-2">
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-white border border-[#EEE5DE]"
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
+          className="h-10 w-10 items-center justify-center rounded-full border"
         >
-          <Ionicons name="arrow-back" size={20} color="#241C18" />
+          <Ionicons name="arrow-back" size={20} color={colors.text} />
         </Pressable>
 
         <View className="flex-1 items-center px-3">
           <Text
-            className="text-base font-extrabold text-[#241C18]"
+            style={{ color: colors.text }}
+            className="text-base font-extrabold"
             numberOfLines={1}
           >
             {cafe?.name || "Reviews"}
           </Text>
-          <Text className="text-[11px] font-medium text-[#8A7D75]">
+          <Text style={{ color: colors.muted }} className="text-[11px] font-medium">
             Customer Reviews ({reviews.length})
           </Text>
         </View>
@@ -184,9 +227,16 @@ export default function CafeReviewsScreen() {
               params: { cafeId: id, cafeName: cafe?.name || "" },
             })
           }
-          className="h-10 items-center justify-center rounded-full bg-[#FAF3EE] px-3.5 border border-[#F2D7CA]"
+          style={{
+            backgroundColor: colors.chip,
+            borderColor: colors.border,
+          }}
+          className="h-10 items-center justify-center rounded-full px-3.5 border"
         >
-          <Text className="text-xs font-extrabold text-[#B95E2E]">
+          <Text
+            style={{ color: colors.primary }}
+            className="text-xs font-extrabold"
+          >
             + Write
           </Text>
         </Pressable>
@@ -205,17 +255,29 @@ export default function CafeReviewsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#B95E2E"
+            tintColor={colors.primary}
           />
         }
         ListHeaderComponent={
           <>
             {/* Rating Breakdown Card */}
-            <View className="mb-4 mt-2 rounded-2xl border border-[#EEE5DE] bg-white p-5 shadow-sm">
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="mb-4 mt-2 rounded-2xl border p-5 shadow-sm"
+            >
               <View className="flex-row items-center">
                 {/* Score Column */}
-                <View className="items-center pr-6 border-r border-[#F0EAE4]">
-                  <Text className="text-4xl font-black text-[#241C18]">
+                <View
+                  style={{ borderRightColor: colors.border }}
+                  className="items-center pr-6 border-r"
+                >
+                  <Text
+                    style={{ color: colors.text }}
+                    className="text-4xl font-black"
+                  >
                     {(cafe?.rating || breakdown.average).toFixed(1)}
                   </Text>
                   <View className="flex-row mt-1">
@@ -232,7 +294,7 @@ export default function CafeReviewsScreen() {
                       />
                     ))}
                   </View>
-                  <Text className="mt-1 text-xs text-[#93867E]">
+                  <Text style={{ color: colors.muted }} className="mt-1 text-xs">
                     {breakdown.total} {breakdown.total === 1 ? "review" : "reviews"}
                   </Text>
                 </View>
@@ -249,7 +311,10 @@ export default function CafeReviewsScreen() {
                         key={`bar-${star}`}
                         className="flex-row items-center"
                       >
-                        <Text className="w-3 text-[10px] font-bold text-[#8A7D75]">
+                        <Text
+                          style={{ color: colors.muted }}
+                          className="w-3 text-[10px] font-bold"
+                        >
                           {star}
                         </Text>
                         <Ionicons
@@ -258,13 +323,22 @@ export default function CafeReviewsScreen() {
                           color="#F6B94A"
                           style={{ marginHorizontal: 3 }}
                         />
-                        <View className="h-2 flex-1 rounded-full bg-[#F4EFEA] overflow-hidden">
+                        <View
+                          style={{ backgroundColor: colors.chip }}
+                          className="h-2 flex-1 rounded-full overflow-hidden"
+                        >
                           <View
-                            style={{ width: `${percent}%` }}
-                            className="h-full rounded-full bg-[#B95E2E]"
+                            style={{
+                              width: `${percent}%`,
+                              backgroundColor: colors.primary,
+                            }}
+                            className="h-full rounded-full"
                           />
                         </View>
-                        <Text className="w-6 text-right text-[10px] text-[#93867E]">
+                        <Text
+                          style={{ color: colors.muted }}
+                          className="w-6 text-right text-[10px]"
+                        >
                           {count}
                         </Text>
                       </View>
@@ -278,16 +352,19 @@ export default function CafeReviewsScreen() {
             <View className="mb-4 flex-row items-center gap-2">
               <Pressable
                 onPress={() => setFilterRating(null)}
-                className={`rounded-full px-4 py-2 ${
-                  filterRating === null
-                    ? "bg-[#B95E2E]"
-                    : "border border-[#EEE5DE] bg-white"
-                }`}
+                style={{
+                  backgroundColor:
+                    filterRating === null ? colors.primary : colors.surface,
+                  borderColor:
+                    filterRating === null ? colors.primary : colors.border,
+                }}
+                className="rounded-full border px-4 py-2"
               >
                 <Text
-                  className={`text-xs font-bold ${
-                    filterRating === null ? "text-white" : "text-[#786B63]"
-                  }`}
+                  style={{
+                    color: filterRating === null ? "#FFFFFF" : colors.muted,
+                  }}
+                  className="text-xs font-bold"
                 >
                   All ({reviews.length})
                 </Text>
@@ -299,11 +376,11 @@ export default function CafeReviewsScreen() {
                   <Pressable
                     key={`filter-${star}`}
                     onPress={() => setFilterRating(active ? null : star)}
-                    className={`flex-row items-center rounded-full px-3 py-2 ${
-                      active
-                        ? "bg-[#B95E2E]"
-                        : "border border-[#EEE5DE] bg-white"
-                    }`}
+                    style={{
+                      backgroundColor: active ? colors.primary : colors.surface,
+                      borderColor: active ? colors.primary : colors.border,
+                    }}
+                    className="flex-row items-center rounded-full border px-3 py-2"
                   >
                     <Ionicons
                       name="star"
@@ -311,9 +388,10 @@ export default function CafeReviewsScreen() {
                       color={active ? "#FFFFFF" : "#F6B94A"}
                     />
                     <Text
-                      className={`ml-1 text-xs font-bold ${
-                        active ? "text-white" : "text-[#786B63]"
-                      }`}
+                      style={{
+                        color: active ? "#FFFFFF" : colors.muted,
+                      }}
+                      className="ml-1 text-xs font-bold"
                     >
                       {star}★
                     </Text>
@@ -324,14 +402,29 @@ export default function CafeReviewsScreen() {
           </>
         }
         ListEmptyComponent={
-          <View className="items-center rounded-2xl border border-[#EEE5DE] bg-white p-8 mt-4">
-            <View className="h-14 w-14 items-center justify-center rounded-full bg-[#FAF3EE]">
-              <Ionicons name="chatbubbles-outline" size={26} color="#B95E2E" />
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="items-center rounded-2xl border p-8 mt-4"
+          >
+            <View
+              style={{ backgroundColor: colors.chip }}
+              className="h-14 w-14 items-center justify-center rounded-full"
+            >
+              <Ionicons name="chatbubbles-outline" size={26} color={colors.primary} />
             </View>
-            <Text className="mt-3 text-base font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="mt-3 text-base font-extrabold"
+            >
               {filterRating ? `No ${filterRating}-star reviews` : "No reviews yet"}
             </Text>
-            <Text className="mt-1 text-center text-xs text-[#8A7D75]">
+            <Text
+              style={{ color: colors.muted }}
+              className="mt-1 text-center text-xs"
+            >
               Be the first to share your experience with this café!
             </Text>
             <Pressable
@@ -341,7 +434,8 @@ export default function CafeReviewsScreen() {
                   params: { cafeId: id, cafeName: cafe?.name || "" },
                 })
               }
-              className="mt-4 rounded-xl bg-[#B95E2E] px-5 py-2.5"
+              style={{ backgroundColor: colors.primary }}
+              className="mt-4 rounded-xl px-5 py-2.5"
             >
               <Text className="text-xs font-extrabold text-white">
                 Write a Review

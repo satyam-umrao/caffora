@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   Image,
@@ -12,47 +12,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import { logout } from "../../src/services/firebase/auth";
 import { auth } from "../../src/services/firebase/config";
 import { getUserProfile } from "../../src/services/firebase/users";
-
-/* ============================================================
-   CAFFORA LIGHT THEME
-============================================================ */
-
-const COLORS = {
-  /* Background */
-  background: "#F8F5F1",
-
-  /* Cards */
-  card: "#FFFFFF",
-  cardPressed: "#F7F2ED",
-
-  /* Brand */
-  primary: "#BB5729",
-  primaryDark: "#99451F",
-  primaryLight: "#D97B4E",
-
-  /* Text */
-  text: "#28201C",
-  secondary: "#81756D",
-  muted: "#A79B92",
-
-  /* Lines */
-  border: "#EEE7E1",
-
-  /* Icon surface */
-  iconBackground: "#F8EEE8",
-
-  /* Toggle */
-  toggleOff: "#D8D2CD",
-  toggleOn: "#BB5729",
-
-  /* Danger */
-  danger: "#D8564E",
-  dangerBackground: "#FFF2F1",
-  dangerBorder: "#F1D8D5",
-};
 
 const DEFAULT_AVATAR =
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500";
@@ -85,6 +48,8 @@ type ProfileRowProps = {
 ============================================================ */
 
 export default function ProfileScreen() {
+  const { colors, isDark, themeMode } = useTheme();
+
   const [profile, setProfile] = useState<Profile>({
     name: auth.currentUser?.displayName || "Caffora User",
     email: auth.currentUser?.email || "No email available",
@@ -95,51 +60,58 @@ export default function ProfileScreen() {
   const [cafeDiscovery, setCafeDiscovery] = useState(false);
 
   /* ==========================================================
+     DYNAMIC THEME TOKENS
+  ========================================================== */
+
+  const COLORS = useMemo(
+    () => ({
+      background: colors.background,
+      card: colors.surface,
+      cardPressed: colors.surfacePressed,
+      primary: colors.primary,
+      primaryDark: colors.primaryDark,
+      primaryLight: colors.primaryLight,
+      text: colors.text,
+      secondary: colors.textSecondary,
+      muted: colors.textMuted,
+      border: colors.border,
+      iconBackground: colors.primarySoft,
+      toggleOff: isDark ? "#382C24" : "#D8D2CD",
+      toggleOn: colors.primary,
+      danger: colors.danger,
+      dangerBackground: colors.dangerSoft,
+      dangerBorder: isDark ? "#4A1D1C" : "#F1D8D5",
+    }),
+    [colors, isDark],
+  );
+
+  /* ==========================================================
      LOAD PROFILE
   ========================================================== */
 
-  const loadProfileData = useCallback(async () => {
+  const loadProfile = useCallback(async () => {
     const user = auth.currentUser;
-
-    if (!user) {
-      return;
-    }
+    if (!user) return;
 
     try {
-      const userDoc = await getUserProfile(user.uid);
-
-      setProfile({
-        name: userDoc?.displayName || user.displayName || "Caffora User",
-
-        email: userDoc?.email || user.email || "No email available",
-
-        avatar: userDoc?.photoURL || user.photoURL || DEFAULT_AVATAR,
-
-        phoneNumber: userDoc?.phoneNumber || user.phoneNumber || undefined,
-      });
-    } catch (error) {
-      console.error("Failed to load profile:", error);
-
-      setProfile({
-        name: user.displayName || "Caffora User",
-
-        email: user.email || "No email available",
-
-        avatar: user.photoURL || DEFAULT_AVATAR,
-
-        phoneNumber: user.phoneNumber || undefined,
-      });
+      const data = await getUserProfile(user.uid);
+      if (data) {
+        setProfile({
+          name: data.displayName || "Caffora User",
+          email: data.email || user.email || "No email available",
+          avatar: data.photoURL || DEFAULT_AVATAR,
+          phoneNumber: data.phoneNumber || undefined,
+        });
+      }
+    } catch (e) {
+      console.log("Error loading profile:", e);
     }
   }, []);
 
-  /* ==========================================================
-     REFRESH PROFILE WHEN SCREEN GETS FOCUS
-  ========================================================== */
-
   useFocusEffect(
     useCallback(() => {
-      loadProfileData();
-    }, [loadProfileData]),
+      loadProfile();
+    }, [loadProfile]),
   );
 
   /* ==========================================================
@@ -149,7 +121,7 @@ export default function ProfileScreen() {
   const handleLogout = useCallback(() => {
     Alert.alert(
       "Log out",
-      "Are you sure you want to log out of your Caffora account?",
+      "Are you sure you want to log out of your account?",
       [
         {
           text: "Cancel",
@@ -161,11 +133,8 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await logout();
-
               router.replace("/(auth)/login");
-            } catch (error) {
-              console.error("Logout error:", error);
-
+            } catch {
               Alert.alert(
                 "Logout failed",
                 "Something went wrong. Please try again.",
@@ -353,7 +322,7 @@ export default function ProfileScreen() {
               height: 35,
               backgroundColor: COLORS.card,
               borderWidth: 1,
-              borderColor: "#DDD4CC",
+              borderColor: COLORS.border,
             }}
           >
             <Ionicons name="pencil-outline" size={14} color={COLORS.text} />
@@ -384,6 +353,8 @@ export default function ProfileScreen() {
             className="overflow-hidden rounded-[21px]"
             style={{
               backgroundColor: COLORS.card,
+              borderWidth: 1,
+              borderColor: COLORS.border,
             }}
           >
             <ProfileRow
@@ -414,6 +385,8 @@ export default function ProfileScreen() {
             className="overflow-hidden rounded-[21px]"
             style={{
               backgroundColor: COLORS.card,
+              borderWidth: 1,
+              borderColor: COLORS.border,
             }}
           >
             <ProfileRow
@@ -437,17 +410,33 @@ export default function ProfileScreen() {
           </View>
 
           {/* ==================================================
-              ACCOUNT
+              ACCOUNT & PREFERENCES
           ================================================== */}
 
-          <SectionTitle title="Account" className="mt-5" />
+          <SectionTitle title="Account & Preferences" className="mt-5" />
 
           <View
             className="overflow-hidden rounded-[21px]"
             style={{
               backgroundColor: COLORS.card,
+              borderWidth: 1,
+              borderColor: COLORS.border,
             }}
           >
+            <ProfileRow
+              icon={isDark ? "moon-outline" : "sunny-outline"}
+              title="Appearance"
+              subtitle="Theme mode"
+              rightText={
+                themeMode === "system"
+                  ? "System"
+                  : themeMode === "dark"
+                    ? "Dark"
+                    : "Light"
+              }
+              onPress={() => router.push("/profile/settings")}
+            />
+
             <ProfileRow
               icon="person-outline"
               title="Edit profile"
@@ -528,11 +517,13 @@ function SectionTitle({
   title: string;
   className?: string;
 }) {
+  const { colors } = useTheme();
+
   return (
     <Text
       className={`mb-2.5 text-[12px] font-medium ${className}`}
       style={{
-        color: COLORS.secondary,
+        color: colors.textSecondary,
       }}
     >
       {title}
@@ -555,16 +546,18 @@ function ProfileRow({
   rightText,
   isLast = false,
 }: ProfileRowProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <View>
-      {/* ======================================================
-          ROW
-      ====================================================== */}
-
       <Pressable
         onPress={onPress}
         disabled={!onPress && !toggle}
-        className="min-h-[53px] flex-row items-center px-4 active:bg-[#F7F2ED]"
+        className="min-h-[53px] flex-row items-center px-4"
+        style={({ pressed }) => ({
+          backgroundColor:
+            pressed && onPress ? colors.surfacePressed : colors.surface,
+        })}
       >
         {/* ICON */}
 
@@ -572,10 +565,10 @@ function ProfileRow({
           className="h-8 w-8 items-center justify-center rounded-[10px]"
           style={{
             marginRight: 9,
-            backgroundColor: COLORS.iconBackground,
+            backgroundColor: colors.primarySoft,
           }}
         >
-          <Ionicons name={icon} size={17} color={COLORS.primary} />
+          <Ionicons name={icon} size={17} color={colors.primary} />
         </View>
 
         {/* TEXT */}
@@ -585,7 +578,7 @@ function ProfileRow({
             numberOfLines={1}
             className="text-[14px] font-medium"
             style={{
-              color: COLORS.text,
+              color: colors.text,
             }}
           >
             {title}
@@ -596,7 +589,7 @@ function ProfileRow({
               numberOfLines={1}
               className="mt-0.5 text-[10px]"
               style={{
-                color: COLORS.muted,
+                color: colors.textSecondary,
               }}
             >
               {subtitle}
@@ -613,11 +606,11 @@ function ProfileRow({
             value={value}
             onValueChange={onToggle}
             trackColor={{
-              false: COLORS.toggleOff,
-              true: COLORS.toggleOn,
+              false: isDark ? "#382C24" : "#D8D2CD",
+              true: colors.primary,
             }}
             thumbColor="#FFFFFF"
-            ios_backgroundColor={COLORS.toggleOff}
+            ios_backgroundColor={isDark ? "#382C24" : "#D8D2CD"}
             style={{
               transform: [
                 {
@@ -636,7 +629,7 @@ function ProfileRow({
                 numberOfLines={1}
                 className="mr-2 text-[12px]"
                 style={{
-                  color: COLORS.secondary,
+                  color: colors.textSecondary,
                 }}
               >
                 {rightText}
@@ -644,19 +637,15 @@ function ProfileRow({
             ) : null}
 
             {onPress ? (
-              <Ionicons name="chevron-forward" size={16} color={COLORS.muted} />
+              <Ionicons
+                name="chevron-forward"
+                size={16}
+                color={colors.muted}
+              />
             ) : null}
           </View>
         )}
       </Pressable>
-
-      {/* ======================================================
-          STABLE SEPARATOR
-
-          IMPORTANT:
-          Do NOT use borderBottomWidth on the Pressable.
-          This prevents the border flashing during tab changes.
-      ====================================================== */}
 
       {!isLast ? (
         <View
@@ -664,7 +653,7 @@ function ProfileRow({
           style={{
             height: 1,
             marginLeft: 53,
-            backgroundColor: COLORS.border,
+            backgroundColor: colors.border,
           }}
         />
       ) : null}

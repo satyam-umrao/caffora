@@ -9,15 +9,14 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import { signUp } from "../../src/services/firebase/auth";
 
 export default function SignupScreen() {
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+  const { colors, isDark } = useTheme();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,11 +27,12 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const bg = "#FAF8F5";
-  const text = "#1D1815";
-  const secondary = "#776B64";
-  const inputBg = "#FFFFFF";
-  const border = "#E5DFDA";
+  const bg = colors.background;
+  const text = colors.text;
+  const secondary = colors.textSecondary;
+  const primary = colors.primary;
+  const inputBg = colors.inputBackground;
+  const border = colors.border;
 
   const handleSignup = async () => {
     setError("");
@@ -96,13 +96,13 @@ export default function SignupScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Pressable
-          onPress={() => router.replace("/(auth)/login")}
+          onPress={() => router.back()}
           style={styles.back}
         >
           <Text style={[styles.backText, { color: text }]}>‹</Text>
         </Pressable>
 
-        <Text style={[styles.title, { color: text }]}>Create Account ☕</Text>
+        <Text style={[styles.title, { color: text }]}>Customer Sign Up ☕</Text>
 
         <Text style={[styles.subtitle, { color: secondary }]}>
           Join Caffora and discover your next favorite cafe.
@@ -168,14 +168,14 @@ export default function SignupScreen() {
             />
 
             <Pressable onPress={() => setShowPassword((v) => !v)}>
-              <Text style={styles.show}>{showPassword ? "Hide" : "Show"}</Text>
+              <Text style={[styles.show, { color: primary }]}>{showPassword ? "Hide" : "Show"}</Text>
             </Pressable>
           </View>
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable
-            style={styles.button}
+            style={[styles.button, { backgroundColor: primary }]}
             onPress={handleSignup}
             disabled={loading}
           >
@@ -187,13 +187,31 @@ export default function SignupScreen() {
           </Pressable>
         </View>
 
+        <Pressable
+          onPress={() => router.push("/(auth)/owner-signup")}
+          style={{
+            marginTop: 22,
+            paddingVertical: 13,
+            paddingHorizontal: 16,
+            borderRadius: 16,
+            backgroundColor: colors.chip,
+            alignItems: "center",
+            borderWidth: 1,
+            borderColor: colors.border,
+          }}
+        >
+          <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }}>
+            Are you a café owner? Register your café here →
+          </Text>
+        </Pressable>
+
         <View style={styles.loginRow}>
           <Text style={[styles.loginLabel, { color: secondary }]}>
             Already have an account?{" "}
           </Text>
 
           <Pressable onPress={() => router.replace("/login")}>
-            <Text style={styles.login}>Login </Text>
+            <Text style={[styles.login, { color: primary }]}>Login </Text>
           </Pressable>
         </View>
       </ScrollView>

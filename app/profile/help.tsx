@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { auth } from "../../src/services/firebase/config";
 import { createSupportTicket } from "../../src/services/firebase/notifications";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const FAQS = [
   {
@@ -54,6 +55,7 @@ const CATEGORIES = [
 ] as const;
 
 export default function HelpSupportScreen() {
+  const { colors, isDark } = useTheme();
   const currentUser = auth.currentUser;
 
   const [expandedFaq, setExpandedFaq] = useState<number | null>(0);
@@ -122,21 +124,35 @@ export default function HelpSupportScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          }}
+          className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+        >
           <Pressable
             onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+            style={{ backgroundColor: colors.cardAlt }}
+            className="h-10 w-10 items-center justify-center rounded-full"
           >
-            <Ionicons name="chevron-back" size={22} color="#241C18" />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
 
-          <Text className="text-base font-extrabold text-[#241C18]">
+          <Text
+            style={{ color: colors.text }}
+            className="text-base font-extrabold"
+          >
             Help & Support
           </Text>
 
@@ -152,30 +168,50 @@ export default function HelpSupportScreen() {
           <View className="mt-5 flex-row gap-3">
             <Pressable
               onPress={handleEmailSupport}
-              className="flex-1 rounded-2xl border border-[#EEE5DE] bg-white p-4"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="flex-1 rounded-2xl border p-4"
             >
-              <View className="h-10 w-10 items-center justify-center rounded-xl bg-[#FAF3EE]">
-                <Ionicons name="mail" size={20} color="#B95E2E" />
+              <View
+                style={{ backgroundColor: colors.chip }}
+                className="h-10 w-10 items-center justify-center rounded-xl"
+              >
+                <Ionicons name="mail" size={20} color={colors.primary} />
               </View>
-              <Text className="mt-2.5 text-xs font-extrabold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="mt-2.5 text-xs font-extrabold"
+              >
                 Email Us
               </Text>
-              <Text className="mt-0.5 text-[11px] text-[#8A7D75]">
+              <Text style={{ color: colors.muted }} className="mt-0.5 text-[11px]">
                 support@caffora.com
               </Text>
             </Pressable>
 
             <Pressable
               onPress={() => Linking.openURL("https://wa.me/919876543210")}
-              className="flex-1 rounded-2xl border border-[#EEE5DE] bg-white p-4"
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="flex-1 rounded-2xl border p-4"
             >
-              <View className="h-10 w-10 items-center justify-center rounded-xl bg-[#EBF7EE]">
+              <View
+                style={{ backgroundColor: isDark ? "#17341E" : "#EBF7EE" }}
+                className="h-10 w-10 items-center justify-center rounded-xl"
+              >
                 <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
               </View>
-              <Text className="mt-2.5 text-xs font-extrabold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="mt-2.5 text-xs font-extrabold"
+              >
                 WhatsApp
               </Text>
-              <Text className="mt-0.5 text-[11px] text-[#8A7D75]">
+              <Text style={{ color: colors.muted }} className="mt-0.5 text-[11px]">
                 Instant support chat
               </Text>
             </Pressable>
@@ -183,31 +219,53 @@ export default function HelpSupportScreen() {
 
           {/* Frequently Asked Questions */}
           <View className="mt-7">
-            <Text className="mb-3 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+            <Text
+              style={{ color: colors.muted }}
+              className="mb-3 ml-1 text-xs font-bold uppercase tracking-wider"
+            >
               Frequently Asked Questions
             </Text>
 
-            <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="rounded-2xl border overflow-hidden"
+            >
               {FAQS.map((faq, index) => {
                 const isExpanded = expandedFaq === index;
                 return (
-                  <View key={`faq-${index}`}>
+                  <View
+                    key={`faq-${index}`}
+                    style={
+                      index > 0
+                        ? { borderTopWidth: 1, borderTopColor: colors.border }
+                        : undefined
+                    }
+                  >
                     <Pressable
                       onPress={() => toggleFaq(index)}
                       className="flex-row items-center justify-between p-4"
                     >
-                      <Text className="flex-1 pr-3 text-xs font-bold text-[#241C18]">
+                      <Text
+                        style={{ color: colors.text }}
+                        className="flex-1 pr-3 text-xs font-bold"
+                      >
                         {faq.question}
                       </Text>
                       <Ionicons
                         name={isExpanded ? "chevron-up" : "chevron-down"}
                         size={16}
-                        color="#B7ABA3"
+                        color={colors.muted}
                       />
                     </Pressable>
                     {isExpanded && (
                       <View className="px-4 pb-4 pt-1">
-                        <Text className="text-xs leading-relaxed text-[#786B63]">
+                        <Text
+                          style={{ color: colors.textSecondary }}
+                          className="text-xs leading-relaxed"
+                        >
                           {faq.answer}
                         </Text>
                       </View>
@@ -219,17 +277,29 @@ export default function HelpSupportScreen() {
           </View>
 
           {/* Submit Support Message Form */}
-          <View className="mt-8 rounded-2xl border border-[#EEE5DE] bg-white p-5">
-            <Text className="text-sm font-black text-[#241C18]">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="mt-8 rounded-2xl border p-5"
+          >
+            <Text
+              style={{ color: colors.text }}
+              className="text-sm font-black"
+            >
               Send Us a Message
             </Text>
-            <Text className="mt-1 text-xs text-[#8A7D75]">
+            <Text style={{ color: colors.muted }} className="mt-1 text-xs">
               {"Have a question or feedback? We'd love to hear from you."}
             </Text>
 
             {/* Category selection */}
             <View className="mt-4">
-              <Text className="mb-2 text-[11px] font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-2 text-[11px] font-bold"
+              >
                 Category
               </Text>
               <View className="flex-row flex-wrap gap-2">
@@ -239,16 +309,21 @@ export default function HelpSupportScreen() {
                     <Pressable
                       key={cat.id}
                       onPress={() => setSelectedCategory(cat.id)}
-                      className={`rounded-xl px-3 py-2 ${
-                        active
-                          ? "bg-[#B95E2E]"
-                          : "border border-[#EEE5DE] bg-[#FAF7F3]"
-                      }`}
+                      style={{
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.cardAlt,
+                        borderColor: active
+                          ? colors.primary
+                          : colors.border,
+                      }}
+                      className="rounded-xl border px-3 py-2"
                     >
                       <Text
-                        className={`text-[11px] font-bold ${
-                          active ? "text-white" : "text-[#786B63]"
-                        }`}
+                        style={{
+                          color: active ? "#FFFFFF" : colors.muted,
+                        }}
+                        className="text-[11px] font-bold"
                       >
                         {cat.label}
                       </Text>
@@ -260,34 +335,54 @@ export default function HelpSupportScreen() {
 
             {/* Subject */}
             <View className="mt-4">
-              <Text className="mb-1.5 text-[11px] font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-[11px] font-bold"
+              >
                 Subject
               </Text>
-              <View className="h-12 rounded-xl border border-[#EEE5DE] bg-[#FAF7F3] px-3.5 justify-center">
+              <View
+                style={{
+                  backgroundColor: colors.cardAlt,
+                  borderColor: colors.border,
+                }}
+                className="h-12 rounded-xl border px-3.5 justify-center"
+              >
                 <TextInput
                   value={subject}
                   onChangeText={setSubject}
                   placeholder="Brief summary of your inquiry..."
-                  placeholderTextColor="#9E928A"
-                  className="text-xs font-semibold text-[#241C18]"
+                  placeholderTextColor={colors.muted}
+                  style={{ color: colors.text }}
+                  className="text-xs font-semibold"
                 />
               </View>
             </View>
 
             {/* Message */}
             <View className="mt-4">
-              <Text className="mb-1.5 text-[11px] font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-[11px] font-bold"
+              >
                 Message Details
               </Text>
-              <View className="rounded-xl border border-[#EEE5DE] bg-[#FAF7F3] p-3">
+              <View
+                style={{
+                  backgroundColor: colors.cardAlt,
+                  borderColor: colors.border,
+                }}
+                className="rounded-xl border p-3"
+              >
                 <TextInput
                   value={message}
                   onChangeText={setMessage}
                   placeholder="Describe your issue or suggestions in detail..."
-                  placeholderTextColor="#9E928A"
+                  placeholderTextColor={colors.muted}
                   multiline
                   numberOfLines={4}
-                  className="text-xs text-[#241C18]"
+                  style={{ color: colors.text }}
+                  className="text-xs"
                 />
               </View>
             </View>
@@ -296,7 +391,8 @@ export default function HelpSupportScreen() {
             <Pressable
               onPress={handleSubmitTicket}
               disabled={submitting}
-              className={`mt-5 h-12 items-center justify-center rounded-xl bg-[#B95E2E] ${
+              style={{ backgroundColor: colors.primary }}
+              className={`mt-5 h-12 items-center justify-center rounded-xl ${
                 submitting ? "opacity-70" : ""
               }`}
             >

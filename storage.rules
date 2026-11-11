@@ -1,0 +1,42 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Core helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size < 10 * 1024 * 1024; // max 10MB
+    }
+
+    // Cafe Photos: cafes/{ownerId}/{fileName}
+    match /cafes/{ownerId}/{allPaths=**} {
+      // Anyone can view cafe photos
+      allow read: if true;
+      // Only the verified cafe owner can upload, update or delete their cafe photos
+      allow write: if isOwner(ownerId) && isValidImage();
+      allow delete: if isOwner(ownerId);
+    }
+    
+    // User Avatars: users/{userId}/{fileName}
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
+    }
+    
+    // Review Photos: reviews/{userId}/{fileName}
+    match /reviews/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+      allow delete: if isOwner(userId);
+    }
+  }
+}

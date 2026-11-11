@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,13 +16,17 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { auth } from "../../src/services/firebase/config";
 import {
   cancelBooking,
+  getEffectiveBookingStatus,
   getUserBookings,
+  subscribeToUserBookings,
 } from "../../src/services/firebase/bookings";
 import type { Booking, BookingStatus } from "../../src/types/booking";
+import { useTheme } from "../../src/context/ThemeContext";
 
 type TabType = "upcoming" | "completed" | "cancelled";
 
 export default function BookingHistoryScreen() {
+  const { colors, isDark } = useTheme();
   const currentUser = auth.currentUser;
 
   const [activeTab, setActiveTab] = useState<TabType>("upcoming");
@@ -30,38 +34,52 @@ export default function BookingHistoryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadBookings = useCallback(async () => {
-    if (!currentUser) {
-      setBookings([]);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
+  useFocusEffect(
+    useCallback(() => {
+      if (!currentUser) {
+        setBookings([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
+      const unsubscribe = subscribeToUserBookings(
+        currentUser.uid,
+        (list) => {
+          setBookings(list);
+          setLoading(false);
+          setRefreshing(false);
+        },
+        (err) => {
+          console.error("subscribeToUserBookings error:", err);
+          setLoading(false);
+          setRefreshing(false);
+        },
+      );
+
+      return () => {
+        unsubscribe();
+      };
+    }, [currentUser]),
+  );
+
+  const onRefresh = async () => {
+    if (!currentUser) return;
+    setRefreshing(true);
     try {
       const list = await getUserBookings(currentUser.uid);
       setBookings(list);
     } catch (err) {
-      console.error("Load bookings error:", err);
+      console.error("Refresh error:", err);
     } finally {
-      setLoading(false);
       setRefreshing(false);
     }
-  }, [currentUser]);
-
-  useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadBookings();
   };
 
   const handleCancelBooking = (bookingId: string) => {
     Alert.alert(
       "Cancel Reservation?",
-      "Are you sure you want to cancel this booking?",
+      "Are you sure you want to cancel this booking request?",
       [
         { text: "No, Keep", style: "cancel" },
         {
@@ -70,13 +88,8 @@ export default function BookingHistoryScreen() {
           onPress: async () => {
             try {
               await cancelBooking(bookingId, "Cancelled by user");
-              setBookings((prev) =>
-                prev.map((b) =>
-                  b.id === bookingId ? { ...b, status: "cancelled" } : b,
-                ),
-              );
-              Alert.alert("Reservation Cancelled", "Your booking has been cancelled.");
-            } catch (err) {
+              Alert.alert("Reservation Cancelled", "Your booking request has been cancelled.");
+            } catch {
               Alert.alert("Error", "Could not cancel booking. Please try again.");
             }
           },
@@ -86,40 +99,74 @@ export default function BookingHistoryScreen() {
   };
 
   const filteredBookings = bookings.filter((b) => {
-    if (activeTab === "upcoming") return b.status === "confirmed";
-    if (activeTab === "completed") return b.status === "completed";
-    if (activeTab === "cancelled") return b.status === "cancelled";
+    const effectiveStatus = getEffectiveBookingStatus(b);
+    if (activeTab === "upcoming") {
+      return (
+        effectiveStatus === "confirmed" ||
+        effectiveStatus === "pending" ||
+        effectiveStatus === "on_hold"
+      );
+    }
+    if (activeTab === "completed") return effectiveStatus === "completed";
+    if (activeTab === "cancelled") {
+      return (
+        effectiveStatus === "cancelled" || effectiveStatus === "rejected"
+      );
+    }
     return true;
   });
 
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
+      case "pending":
+        return {
+          label: "Pending",
+          bgColor: isDark ? "#382C18" : "#FEF3D6",
+          textColor: isDark ? "#F8C162" : "#B45309",
+          dotColor: "#D97706",
+        };
+      case "on_hold":
+        return {
+          label: "On Hold",
+          bgColor: isDark ? "#281E38" : "#F4EEFD",
+          textColor: isDark ? "#C084FC" : "#7C3AED",
+          dotColor: "#A855F7",
+        };
+      case "rejected":
+        return {
+          label: "Rejected",
+          bgColor: isDark ? "#381816" : "#FDEAE8",
+          textColor: isDark ? "#F87171" : "#D95445",
+          dotColor: "#E0524D",
+        };
       case "confirmed":
         return {
           label: "Confirmed",
-          bgColor: "bg-[#EBF7EE]",
-          textColor: "text-[#2E7A3A]",
-          dotColor: "bg-[#3FB950]",
+          bgColor: isDark ? "#17341E" : "#EBF7EE",
+          textColor: isDark ? "#4ADE80" : "#2E7A3A",
+          dotColor: "#3FB950",
         };
       case "completed":
         return {
           label: "Completed",
-          bgColor: "bg-[#F3EEFA]",
-          textColor: "text-[#654388]",
-          dotColor: "bg-[#8E5EC2]",
+          bgColor: isDark ? "#2A1B3D" : "#F3EEFA",
+          textColor: isDark ? "#C084FC" : "#654388",
+          dotColor: "#8E5EC2",
         };
       case "cancelled":
+      default:
         return {
           label: "Cancelled",
-          bgColor: "bg-[#FDEAE8]",
-          textColor: "text-[#D95445]",
-          dotColor: "bg-[#E0524D]",
+          bgColor: isDark ? "#381816" : "#FDEAE8",
+          textColor: isDark ? "#F87171" : "#D95445",
+          dotColor: "#E0524D",
         };
     }
   };
 
   const renderBookingItem = ({ item }: { item: Booking }) => {
-    const badge = getStatusBadge(item.status);
+    const effectiveStatus = getEffectiveBookingStatus(item);
+    const badge = getStatusBadge(effectiveStatus);
 
     return (
       <Pressable
@@ -129,21 +176,41 @@ export default function BookingHistoryScreen() {
             params: { bookingId: item.id },
           })
         }
-        className="mb-4 overflow-hidden rounded-2xl border border-[#EEE5DE] bg-white p-4"
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        }}
+        className="mb-4 overflow-hidden rounded-2xl border p-4"
       >
         {/* Top Header */}
-        <View className="flex-row items-center justify-between pb-3 border-b border-[#F2ECE7]">
-          <View className="flex-row items-center">
-            <View className={`h-2 w-2 rounded-full ${badge.dotColor}`} />
+        <View
+          style={{ borderBottomColor: colors.border }}
+          className="flex-row items-center justify-between pb-3 border-b"
+        >
+          <View
+            style={{ backgroundColor: badge.bgColor }}
+            className="flex-row items-center rounded-md px-2 py-0.5"
+          >
+            <View
+              style={{ backgroundColor: badge.dotColor }}
+              className="h-2 w-2 rounded-full"
+            />
             <Text
-              className={`ml-1.5 text-[11px] font-extrabold uppercase tracking-wide ${badge.textColor}`}
+              style={{ color: badge.textColor }}
+              className="ml-1.5 text-[11px] font-extrabold uppercase tracking-wide"
             >
               {badge.label}
             </Text>
           </View>
 
-          <View className="rounded-lg bg-[#FAF3EE] px-2.5 py-1">
-            <Text className="text-[11px] font-black tracking-widest text-[#B95E2E]">
+          <View
+            style={{ backgroundColor: colors.chip }}
+            className="rounded-lg px-2.5 py-1"
+          >
+            <Text
+              style={{ color: colors.primary }}
+              className="text-[11px] font-black tracking-widest"
+            >
               {item.bookingCode}
             </Text>
           </View>
@@ -157,43 +224,73 @@ export default function BookingHistoryScreen() {
                 item.cafeImage ||
                 "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
             }}
-            className="h-16 w-16 rounded-xl bg-[#EADFD7]"
+            style={{ backgroundColor: colors.cardAlt }}
+            className="h-16 w-16 rounded-xl"
             resizeMode="cover"
           />
 
           <View className="ml-3 flex-1">
             <Text
-              className="text-base font-extrabold text-[#241C18]"
+              style={{ color: colors.text }}
+              className="text-base font-extrabold"
               numberOfLines={1}
             >
               {item.cafeName}
             </Text>
 
             <View className="mt-1 flex-row items-center">
-              <Ionicons name="calendar-outline" size={13} color="#8A7D75" />
-              <Text className="ml-1 text-xs font-semibold text-[#5E514A]">
+              <Ionicons name="calendar-outline" size={13} color={colors.muted} />
+              <Text
+                style={{ color: colors.textSecondary }}
+                className="ml-1 text-xs font-semibold"
+              >
                 {item.date} • {item.time}
               </Text>
             </View>
 
             <View className="mt-1 flex-row items-center">
-              <Ionicons name="people-outline" size={13} color="#8A7D75" />
-              <Text className="ml-1 text-xs text-[#8A7D75]">
+              <Ionicons name="people-outline" size={13} color={colors.muted} />
+              <Text style={{ color: colors.muted }} className="ml-1 text-xs">
                 {item.guests} Guests ({item.seatingPreference})
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Bottom Actions for Upcoming */}
-        {item.status === "confirmed" && (
-          <View className="mt-3 flex-row items-center justify-between border-t border-[#F2ECE7] pt-3">
+        {/* Owner Note / Explanation Banner */}
+        {item.ownerNote ? (
+          <View
+            style={{
+              backgroundColor: isDark ? "#281E38" : "#F8F4FD",
+              borderColor: isDark ? "#4A3568" : "#E2D3FD",
+            }}
+            className="mt-3 rounded-xl border p-2.5 flex-row items-center gap-2"
+          >
+            <Ionicons name="chatbubble-ellipses-outline" size={14} color={isDark ? "#C084FC" : "#7C3AED"} />
+            <Text
+              style={{ color: isDark ? "#E9D5FF" : "#581C87" }}
+              className="flex-1 text-[11px] leading-tight"
+            >
+              <Text className="font-bold">Café Note: </Text>
+              {item.ownerNote}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Bottom Actions for Active (Pending, On Hold, Confirmed) */}
+        {(effectiveStatus === "confirmed" ||
+          effectiveStatus === "pending" ||
+          effectiveStatus === "on_hold") && (
+          <View
+            style={{ borderTopColor: colors.border }}
+            className="mt-3 flex-row items-center justify-between border-t pt-3"
+          >
             <Pressable
               onPress={() => handleCancelBooking(item.id)}
               className="rounded-lg px-3 py-1.5"
             >
               <Text className="text-xs font-bold text-[#D95445]">
-                Cancel Booking
+                {effectiveStatus === "pending" ? "Cancel Request" : "Cancel Booking"}
               </Text>
             </Pressable>
 
@@ -204,10 +301,92 @@ export default function BookingHistoryScreen() {
                   params: { bookingId: item.id },
                 })
               }
-              className="flex-row items-center rounded-lg bg-[#FAF3EE] px-3.5 py-1.5"
+              style={{ backgroundColor: colors.chip }}
+              className="flex-row items-center rounded-lg px-3.5 py-1.5"
             >
-              <Text className="text-xs font-extrabold text-[#B95E2E]">
-                View Pass →
+              <Text
+                style={{ color: colors.primary }}
+                className="text-xs font-extrabold"
+              >
+                {effectiveStatus === "confirmed" ? "View Pass →" : "View Details →"}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Bottom Actions for Completed */}
+        {effectiveStatus === "completed" && (
+          <View
+            style={{ borderTopColor: colors.border }}
+            className="mt-3 flex-row items-center justify-between border-t pt-3"
+          >
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/modal/write-review",
+                  params: { cafeId: item.cafeId },
+                })
+              }
+              style={{ backgroundColor: colors.chip }}
+              className="flex-row items-center rounded-lg px-3 py-1.5"
+            >
+              <Ionicons name="star-outline" size={13} color={colors.primary} />
+              <Text
+                style={{ color: colors.primary }}
+                className="ml-1 text-xs font-extrabold"
+              >
+                Rate & Review
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/modal/booking-details",
+                  params: { bookingId: item.id },
+                })
+              }
+              style={{ backgroundColor: colors.chip }}
+              className="flex-row items-center rounded-lg px-3.5 py-1.5"
+            >
+              <Text
+                style={{ color: colors.primary }}
+                className="text-xs font-extrabold"
+              >
+                View Summary →
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* Bottom Actions for Cancelled */}
+        {effectiveStatus === "cancelled" && (
+          <View
+            style={{ borderTopColor: colors.border }}
+            className="mt-3 flex-row items-center justify-between border-t pt-3"
+          >
+            <View className="flex-row items-center flex-1 pr-2">
+              <Ionicons name="close-circle-outline" size={13} color="#D95445" />
+              <Text style={{ color: colors.muted }} className="ml-1 text-xs" numberOfLines={1}>
+                {item.cancellationReason || "Cancelled"}
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={() =>
+                router.push({
+                  pathname: "/booking/[cafeId]",
+                  params: { cafeId: item.cafeId },
+                })
+              }
+              style={{ backgroundColor: colors.chip }}
+              className="flex-row items-center rounded-lg px-3.5 py-1.5"
+            >
+              <Text
+                style={{ color: colors.primary }}
+                className="text-xs font-extrabold"
+              >
+                Book Again →
               </Text>
             </Pressable>
           </View>
@@ -217,17 +396,31 @@ export default function BookingHistoryScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Top Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{ backgroundColor: colors.cardAlt }}
+          className="h-10 w-10 items-center justify-center rounded-full"
         >
-          <Ionicons name="chevron-back" size={22} color="#241C18" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text className="text-base font-extrabold text-[#241C18]">
+        <Text
+          style={{ color: colors.text }}
+          className="text-base font-extrabold"
+        >
           My Reservations
         </Text>
 
@@ -235,9 +428,19 @@ export default function BookingHistoryScreen() {
       </View>
 
       {/* Segmented Tabs */}
-      <View className="flex-row px-5 py-3.5 bg-white border-b border-[#EEE5DE]">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row px-5 py-3.5 border-b"
+      >
         {(["upcoming", "completed", "cancelled"] as const).map((tab) => {
           const isActive = activeTab === tab;
+          const targetStatus = tab === "upcoming" ? "confirmed" : tab;
+          const count = bookings.filter(
+            (b) => getEffectiveBookingStatus(b) === targetStatus,
+          ).length;
           const label =
             tab === "upcoming"
               ? "Upcoming"
@@ -249,17 +452,39 @@ export default function BookingHistoryScreen() {
             <Pressable
               key={tab}
               onPress={() => setActiveTab(tab)}
-              className={`flex-1 items-center py-2.5 rounded-xl ${
-                isActive ? "bg-[#B95E2E]" : ""
-              }`}
+              style={{
+                backgroundColor: isActive ? colors.primary : "transparent",
+              }}
+              className="flex-1 items-center justify-center py-2.5 rounded-xl flex-row"
             >
               <Text
-                className={`text-xs font-extrabold ${
-                  isActive ? "text-white" : "text-[#786B63]"
-                }`}
+                style={{
+                  color: isActive ? "#FFFFFF" : colors.muted,
+                }}
+                className="text-xs font-extrabold"
               >
                 {label}
               </Text>
+              {count > 0 && (
+                <View
+                  style={{
+                    backgroundColor: isActive
+                      ? "rgba(255, 255, 255, 0.28)"
+                      : colors.chip,
+                  }}
+                  className="ml-1.5 rounded-full px-1.5 py-0.5"
+                >
+                  <Text
+                    style={{
+                      color: isActive ? "#FFFFFF" : colors.primary,
+                      fontSize: 10,
+                      fontWeight: "800",
+                    }}
+                  >
+                    {count}
+                  </Text>
+                </View>
+              )}
             </Pressable>
           );
         })}
@@ -268,7 +493,7 @@ export default function BookingHistoryScreen() {
       {/* Bookings List */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#B95E2E" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -285,20 +510,35 @@ export default function BookingHistoryScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#B95E2E"
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
-            <View className="items-center rounded-3xl border border-[#EEE5DE] bg-white p-8 mt-6">
-              <View className="h-16 w-16 items-center justify-center rounded-2xl bg-[#FAF3EE]">
-                <Ionicons name="calendar-outline" size={32} color="#B95E2E" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="items-center rounded-3xl border p-8 mt-6"
+            >
+              <View
+                style={{ backgroundColor: colors.chip }}
+                className="h-16 w-16 items-center justify-center rounded-2xl"
+              >
+                <Ionicons name="calendar-outline" size={32} color={colors.primary} />
               </View>
 
-              <Text className="mt-4 text-lg font-black text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="mt-4 text-lg font-black"
+              >
                 No {activeTab} bookings
               </Text>
 
-              <Text className="mt-1 text-center text-xs leading-relaxed text-[#8A7D75]">
+              <Text
+                style={{ color: colors.muted }}
+                className="mt-1 text-center text-xs leading-relaxed"
+              >
                 {activeTab === "upcoming"
                   ? "You don't have any upcoming café table reservations."
                   : activeTab === "completed"
@@ -309,7 +549,8 @@ export default function BookingHistoryScreen() {
               {activeTab === "upcoming" && (
                 <Pressable
                   onPress={() => router.push("/(tabs)")}
-                  className="mt-6 rounded-2xl bg-[#B95E2E] px-6 py-3.5"
+                  style={{ backgroundColor: colors.primary }}
+                  className="mt-6 rounded-2xl px-6 py-3.5"
                 >
                   <Text className="text-xs font-extrabold text-white">
                     Explore Cafés

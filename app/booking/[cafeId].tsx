@@ -17,6 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { auth } from "../../src/services/firebase/config";
 import { Cafe, getCafeById } from "../../src/services/firebase/cafes";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const TIME_SLOTS = [
   { group: "Morning", slots: ["08:30 AM", "09:30 AM", "10:30 AM", "11:30 AM"] },
@@ -33,6 +34,7 @@ const SEATING_OPTIONS = [
 ];
 
 export default function BookCafeScreen() {
+  const { colors, isDark } = useTheme();
   const { cafeId } = useLocalSearchParams<{ cafeId: string }>();
   const insets = useSafeAreaInsets();
 
@@ -107,12 +109,29 @@ export default function BookCafeScreen() {
       return;
     }
 
+    if (cafe && cafe.isActive === false) {
+      Alert.alert(
+        "Reservations Unavailable",
+        "This café is currently unlisted and not accepting reservations.",
+      );
+      return;
+    }
+
+    if (cafe && cafe.isOpen === false) {
+      Alert.alert(
+        "Café Temporarily Closed",
+        "This café has been temporarily closed by the owner and is not accepting table requests.",
+      );
+      return;
+    }
+
     const chosenDate = availableDates[selectedDateIndex].fullDateString;
 
     router.push({
       pathname: "/booking/confirmation",
       params: {
         cafeId: id,
+        ownerId: cafe?.ownerId || "",
         cafeName: cafe?.name || "Cafe",
         cafeImage: cafe?.image || "",
         cafeLocation: cafe?.location || "",
@@ -128,9 +147,12 @@ export default function BookCafeScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#FAF7F3]">
-        <ActivityIndicator size="large" color="#B95E2E" />
-        <Text className="mt-3 text-sm font-semibold text-[#8A7D75]">
+      <SafeAreaView
+        style={{ backgroundColor: colors.background }}
+        className="flex-1 items-center justify-center"
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={{ color: colors.muted }} className="mt-3 text-sm font-semibold">
           Preparing booking details...
         </Text>
       </SafeAreaView>
@@ -138,26 +160,41 @@ export default function BookCafeScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          }}
+          className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+        >
           <Pressable
             onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+            style={{ backgroundColor: colors.cardAlt }}
+            className="h-10 w-10 items-center justify-center rounded-full"
           >
-            <Ionicons name="chevron-back" size={22} color="#241C18" />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
 
           <View className="flex-1 items-center px-2">
-            <Text className="text-base font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-base font-extrabold"
+            >
               Reserve a Table
             </Text>
             <Text
-              className="text-xs font-semibold text-[#B95E2E]"
+              style={{ color: colors.primary }}
+              className="text-xs font-semibold"
               numberOfLines={1}
             >
               {cafe?.name}
@@ -173,32 +210,46 @@ export default function BookCafeScreen() {
         >
           {/* Cafe Snippet Card */}
           {cafe && (
-            <View className="mt-4 flex-row items-center rounded-2xl border border-[#EEE5DE] bg-white p-3">
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="mt-4 flex-row items-center rounded-2xl border p-3"
+            >
               <Image
                 source={{
                   uri:
                     cafe.image ||
                     "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
                 }}
-                className="h-16 w-16 rounded-xl bg-[#EADFD7]"
+                style={{ backgroundColor: colors.cardAlt }}
+                className="h-16 w-16 rounded-xl"
                 resizeMode="cover"
               />
               <View className="ml-3 flex-1">
                 <Text
-                  className="text-base font-extrabold text-[#241C18]"
+                  style={{ color: colors.text }}
+                  className="text-base font-extrabold"
                   numberOfLines={1}
                 >
                   {cafe.name}
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text style={{ color: colors.muted }} className="text-xs">
                   {cafe.location}, {cafe.city}
                 </Text>
                 <View className="mt-1 flex-row items-center">
                   <Ionicons name="star" size={12} color="#F6B94A" />
-                  <Text className="ml-1 text-xs font-bold text-[#77532D]">
+                  <Text
+                    style={{ color: isDark ? "#F8C162" : "#77532D" }}
+                    className="ml-1 text-xs font-bold"
+                  >
                     {cafe.rating.toFixed(1)}
                   </Text>
-                  <Text className="ml-2 text-xs font-semibold text-[#B95E2E]">
+                  <Text
+                    style={{ color: colors.primary }}
+                    className="ml-2 text-xs font-semibold"
+                  >
                     {cafe.priceRange}
                   </Text>
                 </View>
@@ -208,7 +259,10 @@ export default function BookCafeScreen() {
 
           {/* Step 1: Date Selection */}
           <View className="mt-5">
-            <Text className="text-sm font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-sm font-extrabold"
+            >
               1. Select Date
             </Text>
             <ScrollView
@@ -223,31 +277,36 @@ export default function BookCafeScreen() {
                   <Pressable
                     key={`date-${index}`}
                     onPress={() => setSelectedDateIndex(index)}
-                    style={{ minWidth: 70 }}
-                    className={`items-center justify-center rounded-2xl p-3 ${
-                      isSelected
-                        ? "bg-[#B95E2E]"
-                        : "border border-[#EEE5DE] bg-white"
-                    }`}
+                    style={{
+                      minWidth: 70,
+                      backgroundColor: isSelected
+                        ? colors.primary
+                        : colors.surface,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    }}
+                    className="items-center justify-center rounded-2xl border p-3"
                   >
                     <Text
-                      className={`text-[11px] font-bold ${
-                        isSelected ? "text-white" : "text-[#93867E]"
-                      }`}
+                      style={{
+                        color: isSelected ? "#FFFFFF" : colors.muted,
+                      }}
+                      className="text-[11px] font-bold"
                     >
                       {item.dayName}
                     </Text>
                     <Text
-                      className={`my-0.5 text-lg font-black ${
-                        isSelected ? "text-white" : "text-[#241C18]"
-                      }`}
+                      style={{
+                        color: isSelected ? "#FFFFFF" : colors.text,
+                      }}
+                      className="my-0.5 text-lg font-black"
                     >
                       {item.dayNumber}
                     </Text>
                     <Text
-                      className={`text-[10px] font-semibold ${
-                        isSelected ? "text-white" : "text-[#93867E]"
-                      }`}
+                      style={{
+                        color: isSelected ? "#FFFFFF" : colors.muted,
+                      }}
+                      className="text-[10px] font-semibold"
                     >
                       {item.monthName}
                     </Text>
@@ -259,13 +318,19 @@ export default function BookCafeScreen() {
 
           {/* Step 2: Time Selection */}
           <View className="mt-6">
-            <Text className="text-sm font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-sm font-extrabold"
+            >
               2. Select Time Slot
             </Text>
             <View className="mt-3 gap-3">
               {TIME_SLOTS.map((group) => (
                 <View key={group.group}>
-                  <Text className="mb-1.5 text-xs font-bold text-[#8A7D75]">
+                  <Text
+                    style={{ color: colors.muted }}
+                    className="mb-1.5 text-xs font-bold"
+                  >
                     {group.group}
                   </Text>
                   <View className="flex-row flex-wrap gap-2">
@@ -275,16 +340,21 @@ export default function BookCafeScreen() {
                         <Pressable
                           key={slot}
                           onPress={() => setSelectedTime(slot)}
-                          className={`rounded-xl px-3.5 py-2.5 ${
-                            isSelected
-                              ? "bg-[#B95E2E]"
-                              : "border border-[#EEE5DE] bg-white"
-                          }`}
+                          style={{
+                            backgroundColor: isSelected
+                              ? colors.primary
+                              : colors.surface,
+                            borderColor: isSelected
+                              ? colors.primary
+                              : colors.border,
+                          }}
+                          className="rounded-xl border px-3.5 py-2.5"
                         >
                           <Text
-                            className={`text-xs font-bold ${
-                              isSelected ? "text-white" : "text-[#302720]"
-                            }`}
+                            style={{
+                              color: isSelected ? "#FFFFFF" : colors.text,
+                            }}
+                            className="text-xs font-bold"
                           >
                             {slot}
                           </Text>
@@ -298,13 +368,22 @@ export default function BookCafeScreen() {
           </View>
 
           {/* Step 3: Guests Counter */}
-          <View className="mt-6 rounded-2xl border border-[#EEE5DE] bg-white p-4">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="mt-6 rounded-2xl border p-4"
+          >
             <View className="flex-row items-center justify-between">
               <View>
-                <Text className="text-sm font-extrabold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-extrabold"
+                >
                   3. Number of Guests
                 </Text>
-                <Text className="mt-0.5 text-xs text-[#8A7D75]">
+                <Text style={{ color: colors.muted }} className="mt-0.5 text-xs">
                   Table reservation for your party
                 </Text>
               </View>
@@ -312,20 +391,25 @@ export default function BookCafeScreen() {
               <View className="flex-row items-center gap-3">
                 <Pressable
                   onPress={() => setGuests((g) => Math.max(1, g - 1))}
-                  className="h-10 w-10 items-center justify-center rounded-xl bg-[#FAF3EE]"
+                  style={{ backgroundColor: colors.chip }}
+                  className="h-10 w-10 items-center justify-center rounded-xl"
                 >
-                  <Ionicons name="remove" size={20} color="#B95E2E" />
+                  <Ionicons name="remove" size={20} color={colors.primary} />
                 </Pressable>
 
-                <Text className="w-8 text-center text-lg font-black text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="w-8 text-center text-lg font-black"
+                >
                   {guests}
                 </Text>
 
                 <Pressable
                   onPress={() => setGuests((g) => Math.min(12, g + 1))}
-                  className="h-10 w-10 items-center justify-center rounded-xl bg-[#FAF3EE]"
+                  style={{ backgroundColor: colors.chip }}
+                  className="h-10 w-10 items-center justify-center rounded-xl"
                 >
-                  <Ionicons name="add" size={20} color="#B95E2E" />
+                  <Ionicons name="add" size={20} color={colors.primary} />
                 </Pressable>
               </View>
             </View>
@@ -333,7 +417,10 @@ export default function BookCafeScreen() {
 
           {/* Step 4: Seating Preference */}
           <View className="mt-5">
-            <Text className="text-sm font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-sm font-extrabold"
+            >
               4. Seating Preference
             </Text>
             <View className="mt-2.5 flex-row flex-wrap gap-2">
@@ -343,16 +430,19 @@ export default function BookCafeScreen() {
                   <Pressable
                     key={opt}
                     onPress={() => setSeating(opt)}
-                    className={`rounded-full px-4 py-2 ${
-                      isSelected
-                        ? "bg-[#B95E2E]"
-                        : "border border-[#EEE5DE] bg-white"
-                    }`}
+                    style={{
+                      backgroundColor: isSelected
+                        ? colors.primary
+                        : colors.surface,
+                      borderColor: isSelected ? colors.primary : colors.border,
+                    }}
+                    className="rounded-full border px-4 py-2"
                   >
                     <Text
-                      className={`text-xs font-bold ${
-                        isSelected ? "text-white" : "text-[#5E514A]"
-                      }`}
+                      style={{
+                        color: isSelected ? "#FFFFFF" : colors.textSecondary,
+                      }}
+                      className="text-xs font-bold"
                     >
                       {opt}
                     </Text>
@@ -364,18 +454,28 @@ export default function BookCafeScreen() {
 
           {/* Step 5: Special Requests */}
           <View className="mt-5">
-            <Text className="text-sm font-extrabold text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-sm font-extrabold"
+            >
               5. Special Requests (Optional)
             </Text>
-            <View className="mt-2 rounded-2xl border border-[#EEE5DE] bg-white p-3">
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="mt-2 rounded-2xl border p-3"
+            >
               <TextInput
                 value={specialRequests}
                 onChangeText={setSpecialRequests}
                 placeholder="E.g. Celebrating a birthday, high chair needed, quiet workspace..."
-                placeholderTextColor="#9E928A"
+                placeholderTextColor={colors.muted}
                 multiline
                 numberOfLines={3}
-                className="text-xs text-[#241C18]"
+                style={{ color: colors.text }}
+                className="text-xs"
               />
             </View>
           </View>
@@ -383,12 +483,21 @@ export default function BookCafeScreen() {
 
         {/* Sticky Bottom Bar */}
         <View
-          style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-          className="absolute inset-x-0 bottom-0 border-t border-[#EEE5DE] bg-white px-5 pt-3"
+          style={{
+            paddingBottom: Math.max(insets.bottom, 16),
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+            shadowColor: "#000",
+            shadowOpacity: isDark ? 0.3 : 0.05,
+            shadowRadius: 10,
+            elevation: 8,
+          }}
+          className="absolute inset-x-0 bottom-0 border-t px-5 pt-3"
         >
           <Pressable
             onPress={handleProceed}
-            className="h-14 items-center justify-center rounded-2xl bg-[#B95E2E]"
+            style={{ backgroundColor: colors.primary }}
+            className="h-14 items-center justify-center rounded-2xl"
           >
             <Text className="text-base font-extrabold text-white">
               Review Reservation →

@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   Pressable,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import { Cafe, getCafes } from "../../src/services/firebase/cafes";
 import {
   getSavedCafeIds,
@@ -45,6 +45,8 @@ function parseCafeCost(priceStr?: string): number {
 ========================================================= */
 
 export default function SearchScreen() {
+  const { colors, isDark } = useTheme();
+
   const filterParams = useLocalSearchParams<{
     minPrice?: string;
     maxPrice?: string;
@@ -78,7 +80,7 @@ export default function SearchScreen() {
      LOADING / ERROR
   ------------------------------------------------------- */
 
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
@@ -97,8 +99,8 @@ export default function SearchScreen() {
       setError("");
       const data = await getCafes();
       setCafes(data);
-    } catch (error) {
-      console.error("Failed to load cafes:", error);
+    } catch (err) {
+      console.error("Failed to load cafes:", err);
       setError("We couldn't load cafes right now. Please try again.");
     } finally {
       setLoading(false);
@@ -114,8 +116,8 @@ export default function SearchScreen() {
     try {
       const ids = await getSavedCafeIds();
       setSavedIds(ids);
-    } catch (error) {
-      console.error("Failed to load saved cafes:", error);
+    } catch (err) {
+      console.error("Failed to load saved cafes:", err);
     }
   };
 
@@ -134,7 +136,8 @@ export default function SearchScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([loadCafes(), loadSavedCafes()]);
+    loadCafes();
+    loadSavedCafes();
   }, []);
 
   /* =======================================================
@@ -147,80 +150,92 @@ export default function SearchScreen() {
 
       setSavedIds((current) => {
         if (saved) {
-          if (current.includes(cafeId)) {
-            return current;
-          }
+          if (current.includes(cafeId)) return current;
           return [...current, cafeId];
         }
         return current.filter((id) => id !== cafeId);
       });
-    } catch (error: any) {
-      console.error("Save cafe error:", error);
-      if (error?.message === "LOGIN_REQUIRED") {
-        router.push("/(auth)/login");
-        return;
-      }
-      setError("Couldn't update saved cafe. Please try again.");
+    } catch (err) {
+      console.error("Save cafe error:", err);
     }
   };
 
   /* =======================================================
-     ACTIVE FILTERS STATE
+     PARSE ACTIVE FILTER PARAMS
   ======================================================= */
 
-  const activeMinPrice = filterParams.minPrice ? Number(filterParams.minPrice) : 300;
-  const activeMaxPrice = filterParams.maxPrice ? Number(filterParams.maxPrice) : 3000;
-  const activeMinRating = filterParams.rating ? Number(filterParams.rating) : 0;
-  const activeFoodTypes = filterParams.foodTypes
-    ? filterParams.foodTypes.split(",").filter(Boolean)
-    : [];
-  const activeThemes = filterParams.themes
-    ? filterParams.themes.split(",").filter(Boolean)
-    : [];
-  const activeAmenities = filterParams.amenities
-    ? filterParams.amenities.split(",").filter(Boolean)
-    : [];
+  const activeMinPrice = filterParams.minPrice
+    ? parseInt(filterParams.minPrice, 10)
+    : 0;
+  const activeMaxPrice = filterParams.maxPrice
+    ? parseInt(filterParams.maxPrice, 10)
+    : 3000;
+  const activeMinRating = filterParams.rating
+    ? parseFloat(filterParams.rating)
+    : 0;
+
+  const activeFoodTypes = useMemo(() => {
+    return filterParams.foodTypes
+      ? filterParams.foodTypes.split(",").filter(Boolean)
+      : [];
+  }, [filterParams.foodTypes]);
+
+  const activeThemes = useMemo(() => {
+    return filterParams.themes
+      ? filterParams.themes.split(",").filter(Boolean)
+      : [];
+  }, [filterParams.themes]);
+
+  const activeAmenities = useMemo(() => {
+    return filterParams.amenities
+      ? filterParams.amenities.split(",").filter(Boolean)
+      : [];
+  }, [filterParams.amenities]);
+
   const activeOpenNow = filterParams.openNow === "true";
 
   const advancedFiltersCount = useMemo(() => {
     let count = 0;
-    if (activeMinPrice > 300 || activeMaxPrice < 3000) count++;
-    if (activeMinRating > 0) count++;
-    if (activeOpenNow) count++;
-    count += activeFoodTypes.length;
-    count += activeThemes.length;
-    count += activeAmenities.length;
+    if (activeMinPrice > 0 || activeMaxPrice < 3000) count += 1;
+    if (activeMinRating > 0) count += 1;
+    if (activeFoodTypes.length > 0) count += activeFoodTypes.length;
+    if (activeThemes.length > 0) count += activeThemes.length;
+    if (activeAmenities.length > 0) count += activeAmenities.length;
+    if (activeOpenNow) count += 1;
     return count;
   }, [
     activeMinPrice,
     activeMaxPrice,
     activeMinRating,
-    activeOpenNow,
     activeFoodTypes,
     activeThemes,
     activeAmenities,
+    activeOpenNow,
   ]);
 
   const clearAdvancedFilters = () => {
-    router.replace({
-      pathname: "/(tabs)/search",
+    router.setParams({
+      minPrice: undefined,
+      maxPrice: undefined,
+      rating: undefined,
+      foodTypes: undefined,
+      themes: undefined,
+      amenities: undefined,
+      openNow: undefined,
     });
   };
 
   /* =======================================================
-     SEARCH + COMPREHENSIVE FILTER
+     FILTER ENGINE
   ======================================================= */
 
   const filteredCafes = useMemo(() => {
-    const query = searchText.trim().toLowerCase();
-
     return cafes.filter((cafe) => {
-      /* ---------------------------------------------------
-         1. SEARCH MATCH
-      --------------------------------------------------- */
-      if (query) {
+      if (searchText.trim().length > 0) {
+        const query = searchText.trim().toLowerCase();
+
         const matchesName = cafe.name.toLowerCase().includes(query);
-        const matchesLocation = (cafe.location || "").toLowerCase().includes(query);
+        const matchesLocation = cafe.location.toLowerCase().includes(query);
         const matchesCity = (cafe.city || "").toLowerCase().includes(query);
         const matchesCategory = (cafe.category || "").toLowerCase().includes(query);
         const matchesDesc = (cafe.description || "").toLowerCase().includes(query);
@@ -244,36 +259,20 @@ export default function SearchScreen() {
         }
       }
 
-      /* ---------------------------------------------------
-         2. CATEGORY CHIP MATCH
-      --------------------------------------------------- */
       if (selectedCategory !== "All") {
         if (!cafe.category?.toLowerCase().includes(selectedCategory.toLowerCase())) {
           return false;
         }
       }
 
-      /* ---------------------------------------------------
-         3. PRICE FILTER (REAL INR COST)
-      --------------------------------------------------- */
       const cost = parseCafeCost(cafe.priceRange);
-      if (cost < activeMinPrice) {
-        return false;
-      }
-      if (activeMaxPrice < 3000 && cost > activeMaxPrice) {
-        return false;
-      }
+      if (cost < activeMinPrice) return false;
+      if (activeMaxPrice < 3000 && cost > activeMaxPrice) return false;
 
-      /* ---------------------------------------------------
-         4. RATING FILTER
-      --------------------------------------------------- */
       if (activeMinRating > 0 && cafe.rating < activeMinRating) {
         return false;
       }
 
-      /* ---------------------------------------------------
-         5. MODAL CATEGORY / FOOD TYPES
-      --------------------------------------------------- */
       if (activeFoodTypes.length > 0) {
         const matchesAnyCat = activeFoodTypes.some((ft) =>
           cafe.category?.toLowerCase().includes(ft.toLowerCase()),
@@ -281,9 +280,6 @@ export default function SearchScreen() {
         if (!matchesAnyCat) return false;
       }
 
-      /* ---------------------------------------------------
-         6. THEMES / ATMOSPHERE
-      --------------------------------------------------- */
       if (activeThemes.length > 0) {
         const cafeAtmosphere = (cafe.atmosphere || []).map((t) => t.toLowerCase());
         const matchesAnyTheme = activeThemes.some((theme) =>
@@ -292,9 +288,6 @@ export default function SearchScreen() {
         if (!matchesAnyTheme) return false;
       }
 
-      /* ---------------------------------------------------
-         7. AMENITIES
-      --------------------------------------------------- */
       if (activeAmenities.length > 0) {
         const cafeAmenities = (cafe.amenities || []).map((a) => a.toLowerCase());
         const matchesAnyAmenity = activeAmenities.some((amenity) =>
@@ -317,51 +310,22 @@ export default function SearchScreen() {
     activeAmenities,
   ]);
 
-  /* =======================================================
-     OPEN CAFE
-  ======================================================= */
-
   const openCafe = (cafeId: string) => {
     router.push({
       pathname: "/cafe/[id]",
-      params: {
-        id: cafeId,
-      },
+      params: { id: cafeId },
     });
   };
-
-  /* =======================================================
-     CLEAR SEARCH
-  ======================================================= */
 
   const clearSearch = () => {
     setSearchText("");
   };
 
-  /* =======================================================
-     LOADING SCREEN
-  ======================================================= */
-
-  if (loading) {
-    return (
-      <SafeAreaView
-        className="flex-1 items-center justify-center bg-[#FAF7F3]"
-        edges={["top"]}
-      >
-        <ActivityIndicator size="large" color="#B95E2E" />
-        <Text className="mt-3 text-sm font-semibold text-[#8A7D75]">
-          Finding beautiful cafes...
-        </Text>
-      </SafeAreaView>
-    );
-  }
-
-  /* =======================================================
-     MAIN UI
-  ======================================================= */
-
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["top"]}
+    >
       <FlatList
         data={filteredCafes}
         keyExtractor={(item) => item.id}
@@ -373,7 +337,7 @@ export default function SearchScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#B95E2E"
+            tintColor={colors.primary}
           />
         }
         ListHeaderComponent={
@@ -382,13 +346,33 @@ export default function SearchScreen() {
                 HEADER
             ================================================= */}
 
-            <View className="px-5 pb-4 pt-4">
-              <View className="flex-row items-center justify-between">
-                <View className="flex-1">
-                  <Text className="text-[30px] font-black tracking-[-0.6px] text-[#241C18]">
+            <View style={{ paddingHorizontal: 20, paddingBottom: 16, paddingTop: 16 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={{
+                      fontSize: 30,
+                      fontWeight: "900",
+                      letterSpacing: -0.6,
+                      color: colors.text,
+                    }}
+                  >
                     Search
                   </Text>
-                  <Text className="mt-1 text-sm font-medium text-[#8A7D75]">
+                  <Text
+                    style={{
+                      marginTop: 4,
+                      fontSize: 14,
+                      fontWeight: "500",
+                      color: colors.textSecondary,
+                    }}
+                  >
                     Find your perfect cafe in Delhi NCR
                   </Text>
                 </View>
@@ -409,12 +393,45 @@ export default function SearchScreen() {
                       },
                     })
                   }
-                  className="relative h-[46px] w-[46px] items-center justify-center rounded-[16px] border border-[#EEE5DE] bg-white shadow-sm"
+                  style={{
+                    position: "relative",
+                    height: 46,
+                    width: 46,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderRadius: 16,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    backgroundColor: colors.surface,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: isDark ? 0.3 : 0.05,
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }}
                 >
-                  <Ionicons name="options-outline" size={22} color="#B95E2E" />
+                  <Ionicons name="options-outline" size={22} color={colors.primary} />
                   {advancedFiltersCount > 0 && (
-                    <View className="absolute -top-1 -right-1 h-5 w-5 items-center justify-center rounded-full bg-[#B95E2E]">
-                      <Text className="text-[10px] font-extrabold text-white">
+                    <View
+                      style={{
+                        position: "absolute",
+                        top: -4,
+                        right: -4,
+                        height: 20,
+                        width: 20,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        borderRadius: 10,
+                        backgroundColor: colors.primary,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "800",
+                          color: "#FFFFFF",
+                        }}
+                      >
                         {advancedFiltersCount}
                       </Text>
                     </View>
@@ -427,17 +444,48 @@ export default function SearchScreen() {
                 SEARCH BOX
             ================================================= */}
 
-            <View className="mx-5 h-[58px] flex-row items-center rounded-[18px] border border-[#EDE3DC] bg-white px-3 shadow-sm">
-              <View className="h-10 w-10 items-center justify-center">
-                <Ionicons name="search-outline" size={22} color="#8A7D75" />
+            <View
+              style={{
+                marginHorizontal: 20,
+                height: 58,
+                flexDirection: "row",
+                alignItems: "center",
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: colors.inputBorder,
+                backgroundColor: colors.inputBackground,
+                paddingHorizontal: 12,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: isDark ? 0.3 : 0.05,
+                shadowRadius: 6,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  height: 40,
+                  width: 40,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons name="search-outline" size={22} color={colors.textMuted} />
               </View>
 
               <TextInput
                 value={searchText}
                 onChangeText={setSearchText}
                 placeholder="Search cafes, coffee, vibe, location..."
-                placeholderTextColor="#9B9089"
-                className="h-full flex-1 px-2 text-[15px] font-semibold text-[#302720]"
+                placeholderTextColor={colors.textMuted}
+                style={{
+                  height: "100%",
+                  flex: 1,
+                  paddingHorizontal: 8,
+                  fontSize: 15,
+                  fontWeight: "600",
+                  color: colors.text,
+                }}
                 autoCapitalize="none"
                 autoCorrect={false}
                 returnKeyType="search"
@@ -446,10 +494,15 @@ export default function SearchScreen() {
               {searchText.length > 0 && (
                 <Pressable
                   onPress={clearSearch}
-                  className="h-10 w-10 items-center justify-center"
+                  style={{
+                    height: 40,
+                    width: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                   hitSlop={8}
                 >
-                  <Ionicons name="close-circle" size={20} color="#A99B92" />
+                  <Ionicons name="close-circle" size={20} color={colors.textMuted} />
                 </Pressable>
               )}
             </View>
@@ -458,16 +511,51 @@ export default function SearchScreen() {
                 ACTIVE FILTERS BAR
             ================================================= */}
             {advancedFiltersCount > 0 && (
-              <View className="mx-5 mt-3.5 flex-row items-center justify-between rounded-xl bg-[#FAF3EE] px-3.5 py-2.5 border border-[#F2D7CA]">
-                <View className="flex-row items-center flex-1 pr-2">
-                  <Ionicons name="funnel" size={14} color="#B95E2E" />
-                  <Text className="ml-2 text-xs font-bold text-[#8A4A28]">
-                    {advancedFiltersCount} active {advancedFiltersCount === 1 ? "filter" : "filters"} applied
+              <View
+                style={{
+                  marginHorizontal: 20,
+                  marginTop: 14,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  borderRadius: 12,
+                  backgroundColor: colors.primarySoft,
+                  paddingHorizontal: 14,
+                  paddingVertical: 10,
+                  borderWidth: 1,
+                  borderColor: isDark ? colors.border : "#F2D7CA",
+                }}
+              >
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    flex: 1,
+                    paddingRight: 8,
+                  }}
+                >
+                  <Ionicons name="funnel" size={14} color={colors.primary} />
+                  <Text
+                    style={{
+                      marginLeft: 8,
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: colors.primary,
+                    }}
+                  >
+                    {advancedFiltersCount} active{" "}
+                    {advancedFiltersCount === 1 ? "filter" : "filters"} applied
                   </Text>
                 </View>
 
                 <Pressable onPress={clearAdvancedFilters} hitSlop={6}>
-                  <Text className="text-xs font-black text-[#B95E2E]">
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: "900",
+                      color: colors.primary,
+                    }}
+                  >
                     Clear Filters ✕
                   </Text>
                 </Pressable>
@@ -478,8 +566,16 @@ export default function SearchScreen() {
                 CATEGORIES TITLE & CHIPS
             ================================================= */}
 
-            <View className="mt-5">
-              <Text className="mb-2.5 px-5 text-[16px] font-extrabold text-[#302720]">
+            <View style={{ marginTop: 20 }}>
+              <Text
+                style={{
+                  marginBottom: 10,
+                  paddingHorizontal: 20,
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
+              >
                 Quick Categories
               </Text>
 
@@ -491,23 +587,30 @@ export default function SearchScreen() {
                 contentContainerStyle={{
                   paddingHorizontal: 20,
                 }}
-                ItemSeparatorComponent={() => <View className="w-2.5" />}
+                ItemSeparatorComponent={() => <View style={{ width: 10 }} />}
                 renderItem={({ item }) => {
                   const active = selectedCategory === item;
 
                   return (
                     <Pressable
                       onPress={() => setSelectedCategory(item)}
-                      className={`rounded-full px-4 py-2 ${
-                        active
-                          ? "bg-[#B95E2E]"
-                          : "border border-[#E9DED7] bg-white"
-                      }`}
+                      style={{
+                        borderRadius: 50,
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderWidth: active ? 0 : 1,
+                        borderColor: colors.border,
+                        backgroundColor: active
+                          ? colors.primary
+                          : colors.surface,
+                      }}
                     >
                       <Text
-                        className={`text-[12px] font-extrabold ${
-                          active ? "text-white" : "text-[#6F625A]"
-                        }`}
+                        style={{
+                          fontSize: 12,
+                          fontWeight: "800",
+                          color: active ? "#FFFFFF" : colors.textSecondary,
+                        }}
                       >
                         {item}
                       </Text>
@@ -521,12 +624,35 @@ export default function SearchScreen() {
                 RESULTS HEADER
             ================================================= */}
 
-            <View className="mt-6 flex-row items-end justify-between px-5 mb-2">
+            <View
+              style={{
+                marginTop: 24,
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "space-between",
+                paddingHorizontal: 20,
+                marginBottom: 8,
+              }}
+            >
               <View>
-                <Text className="text-[20px] font-extrabold tracking-[-0.3px] text-[#29201B]">
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "800",
+                    letterSpacing: -0.3,
+                    color: colors.text,
+                  }}
+                >
                   Cafés Found
                 </Text>
-                <Text className="mt-0.5 text-xs font-medium text-[#968980]">
+                <Text
+                  style={{
+                    marginTop: 2,
+                    fontSize: 12,
+                    fontWeight: "500",
+                    color: colors.textSecondary,
+                  }}
+                >
                   {filteredCafes.length}{" "}
                   {filteredCafes.length === 1 ? "café" : "cafés"} available
                 </Text>
@@ -542,7 +668,13 @@ export default function SearchScreen() {
                     clearAdvancedFilters();
                   }}
                 >
-                  <Text className="text-[13px] font-extrabold text-[#B95E2E]">
+                  <Text
+                    style={{
+                      fontSize: 13,
+                      fontWeight: "800",
+                      color: colors.primary,
+                    }}
+                  >
                     Reset all
                   </Text>
                 </Pressable>
@@ -554,21 +686,54 @@ export default function SearchScreen() {
             ================================================= */}
 
             {error.length > 0 && (
-              <View className="mx-5 mt-3 mb-3 rounded-[18px] border border-[#F2D7CA] bg-[#FFF5F1] p-4">
-                <View className="flex-row">
-                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-white">
+              <View
+                style={{
+                  marginHorizontal: 20,
+                  marginTop: 12,
+                  marginBottom: 12,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  borderColor: isDark ? "#4A1D1C" : "#F2D7CA",
+                  backgroundColor: colors.dangerSoft,
+                  padding: 16,
+                }}
+              >
+                <View style={{ flexDirection: "row" }}>
+                  <View
+                    style={{
+                      height: 40,
+                      width: 40,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderRadius: 12,
+                      backgroundColor: colors.surface,
+                    }}
+                  >
                     <Ionicons
                       name="alert-circle-outline"
                       size={22}
-                      color="#B95E2E"
+                      color={colors.primary}
                     />
                   </View>
 
-                  <View className="ml-3 flex-1">
-                    <Text className="text-sm font-extrabold text-[#3A2922]">
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        fontWeight: "800",
+                        color: colors.text,
+                      }}
+                    >
                       Something went wrong
                     </Text>
-                    <Text className="mt-1 text-xs leading-[17px] text-[#7E6D64]">
+                    <Text
+                      style={{
+                        marginTop: 4,
+                        fontSize: 12,
+                        lineHeight: 17,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       {error}
                     </Text>
                     <Pressable
@@ -578,7 +743,14 @@ export default function SearchScreen() {
                         loadSavedCafes();
                       }}
                     >
-                      <Text className="mt-2 text-[13px] font-extrabold text-[#B95E2E]">
+                      <Text
+                        style={{
+                          marginTop: 8,
+                          fontSize: 13,
+                          fontWeight: "800",
+                          color: colors.primary,
+                        }}
+                      >
                         Try again
                       </Text>
                     </Pressable>
@@ -627,10 +799,26 @@ type CafeCardProps = {
 };
 
 function CafeCard({ cafe, isSaved, onToggleSave, onPress }: CafeCardProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      className="mx-5 mb-3 flex-row rounded-[20px] border border-[#EEE5DE] bg-white p-3 shadow-sm"
+      style={{
+        marginHorizontal: 20,
+        marginBottom: 12,
+        flexDirection: "row",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        padding: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.3 : 0.05,
+        shadowRadius: 6,
+        elevation: 2,
+      }}
     >
       <Image
         source={{
@@ -638,15 +826,26 @@ function CafeCard({ cafe, isSaved, onToggleSave, onPress }: CafeCardProps) {
             cafe.image ||
             "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
         }}
-        className="h-[100px] w-[100px] rounded-[16px] bg-[#E9DED7]"
+        style={{
+          height: 100,
+          width: 100,
+          borderRadius: 16,
+          backgroundColor: colors.surfaceMuted,
+        }}
         resizeMode="cover"
       />
 
-      <View className="ml-3 flex-1">
-        <View className="flex-row items-start">
+      <View style={{ marginLeft: 12, flex: 1 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
           <Text
             numberOfLines={1}
-            className="flex-1 pr-2 text-[15px] font-extrabold text-[#2B211C]"
+            style={{
+              flex: 1,
+              paddingRight: 8,
+              fontSize: 15,
+              fontWeight: "800",
+              color: colors.text,
+            }}
           >
             {cafe.name}
           </Text>
@@ -657,47 +856,126 @@ function CafeCard({ cafe, isSaved, onToggleSave, onPress }: CafeCardProps) {
               onToggleSave();
             }}
             hitSlop={8}
-            className="h-8 w-8 items-center justify-center rounded-full bg-[#FAF4F0]"
+            style={{
+              height: 32,
+              width: 32,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 16,
+              backgroundColor: colors.surfaceMuted,
+            }}
           >
             <Ionicons
               name={isSaved ? "heart" : "heart-outline"}
               size={17}
-              color={isSaved ? "#E0524D" : "#806F65"}
+              color={isSaved ? colors.danger : colors.muted}
             />
           </Pressable>
         </View>
 
-        <View className="mt-1.5 flex-row items-center">
-          <Ionicons name="location-outline" size={13} color="#8D8179" />
+        <View
+          style={{
+            marginTop: 6,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={13}
+            color={colors.textSecondary}
+          />
           <Text
             numberOfLines={1}
-            className="ml-1 flex-1 text-[11px] font-medium text-[#8B7E76]"
+            style={{
+              marginLeft: 4,
+              flex: 1,
+              fontSize: 11,
+              fontWeight: "500",
+              color: colors.textSecondary,
+            }}
           >
             {cafe.location}, {cafe.city}
           </Text>
         </View>
 
-        <View className="mt-1.5 flex-row items-center">
-          <View className="flex-row items-center rounded-lg bg-[#FFF5E4] px-2 py-0.5">
-            <Ionicons name="star" size={11} color="#F6B94A" />
-            <Text className="ml-1 text-[10px] font-extrabold text-[#77532D]">
+        <View
+          style={{
+            marginTop: 6,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              borderRadius: 8,
+              backgroundColor: isDark ? "#2F2312" : "#FFF5E4",
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+            }}
+          >
+            <Ionicons name="star" size={11} color={colors.star} />
+            <Text
+              style={{
+                marginLeft: 4,
+                fontSize: 10,
+                fontWeight: "800",
+                color: isDark ? "#F8C162" : "#77532D",
+              }}
+            >
               {cafe.rating.toFixed(1)}
             </Text>
           </View>
 
-          <Text className="ml-2 text-[10px] text-[#958880]">
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 10,
+              color: colors.textSecondary,
+            }}
+          >
             ({cafe.reviewCount})
           </Text>
         </View>
 
-        <View className="mt-2 flex-row items-center justify-between">
-          <View className="rounded-lg bg-[#F7F1ED] px-2 py-0.5 max-w-[130px]">
-            <Text numberOfLines={1} className="text-[10px] font-bold text-[#725D50]">
+        <View
+          style={{
+            marginTop: 8,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View
+            style={{
+              borderRadius: 8,
+              backgroundColor: colors.primarySoft,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              maxWidth: 130,
+            }}
+          >
+            <Text
+              numberOfLines={1}
+              style={{
+                fontSize: 10,
+                fontWeight: "700",
+                color: colors.primary,
+              }}
+            >
               {cafe.category}
             </Text>
           </View>
 
-          <Text className="text-[11px] font-extrabold text-[#B95E2E]">
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "800",
+              color: colors.primary,
+            }}
+          >
             {cafe.priceRange}
           </Text>
         </View>
@@ -716,21 +994,60 @@ type EmptySearchProps = {
 };
 
 function EmptySearch({ hasFilters, onClear }: EmptySearchProps) {
+  const { colors } = useTheme();
+
   return (
-    <View className="mx-5 mt-5 items-center rounded-[22px] border border-[#EEE5DE] bg-white px-6 py-10">
-      <View className="h-[62px] w-[62px] items-center justify-center rounded-[20px] bg-[#F8E8DE]">
+    <View
+      style={{
+        marginHorizontal: 20,
+        marginTop: 20,
+        alignItems: "center",
+        borderRadius: 22,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        paddingHorizontal: 24,
+        paddingVertical: 40,
+      }}
+    >
+      <View
+        style={{
+          height: 62,
+          width: 62,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 20,
+          backgroundColor: colors.primarySoft,
+        }}
+      >
         <Ionicons
           name={hasFilters ? "funnel-outline" : "cafe-outline"}
           size={29}
-          color="#B95E2E"
+          color={colors.primary}
         />
       </View>
 
-      <Text className="mt-4 text-[17px] font-extrabold text-[#302720]">
+      <Text
+        style={{
+          marginTop: 16,
+          fontSize: 17,
+          fontWeight: "800",
+          color: colors.text,
+        }}
+      >
         {hasFilters ? "No cafés match your filters" : "No cafés available"}
       </Text>
 
-      <Text className="mt-2 max-w-[290px] text-center text-[13px] leading-5 text-[#8C7E75]">
+      <Text
+        style={{
+          marginTop: 8,
+          maxWidth: 290,
+          textAlign: "center",
+          fontSize: 13,
+          lineHeight: 20,
+          color: colors.textSecondary,
+        }}
+      >
         {hasFilters
           ? "Try loosening your price, rating, or amenity filters to discover more spots."
           : "There are no cafés available right now. Pull down to refresh."}
@@ -739,9 +1056,15 @@ function EmptySearch({ hasFilters, onClear }: EmptySearchProps) {
       {hasFilters && (
         <Pressable
           onPress={onClear}
-          className="mt-5 rounded-full bg-[#B95E2E] px-6 py-2.5 shadow-sm"
+          style={{
+            marginTop: 20,
+            borderRadius: 50,
+            backgroundColor: colors.primary,
+            paddingHorizontal: 24,
+            paddingVertical: 10,
+          }}
         >
-          <Text className="text-[12px] font-extrabold text-white">
+          <Text style={{ fontSize: 12, fontWeight: "800", color: "#FFFFFF" }}>
             Reset Filters
           </Text>
         </Pressable>

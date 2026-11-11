@@ -18,8 +18,10 @@ import {
   markNotificationAsRead,
 } from "../../src/services/firebase/notifications";
 import type { AppNotification } from "../../src/types/database";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function NotificationsScreen() {
+  const { colors, isDark } = useTheme();
   const currentUser = auth.currentUser;
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -88,21 +90,23 @@ export default function NotificationsScreen() {
     return (
       <Pressable
         onPress={() => handleNotificationPress(item)}
-        className={`mb-3 flex-row items-start rounded-2xl border p-4 ${
-          item.read
-            ? "border-[#EEE5DE] bg-white"
-            : "border-[#F5D0BC] bg-[#FFFBF8]"
-        }`}
+        style={{
+          backgroundColor: item.read ? colors.surface : colors.cardAlt,
+          borderColor: item.read ? colors.border : colors.primary,
+        }}
+        className="mb-3 flex-row items-start rounded-2xl border p-4"
       >
         {/* Icon based on notification type */}
         <View
-          className={`h-11 w-11 items-center justify-center rounded-xl ${
-            item.type === "booking"
-              ? "bg-[#EBF7EE]"
-              : item.type === "promo"
-              ? "bg-[#FAF3EE]"
-              : "bg-[#F3EEFA]"
-          }`}
+          style={{
+            backgroundColor:
+              item.type === "booking"
+                ? isDark ? "#17341E" : "#EBF7EE"
+                : item.type === "promo"
+                ? colors.chip
+                : isDark ? "#2A1B3D" : "#F3EEFA",
+          }}
+          className="h-11 w-11 items-center justify-center rounded-xl"
         >
           <Ionicons
             name={
@@ -117,7 +121,7 @@ export default function NotificationsScreen() {
               item.type === "booking"
                 ? "#2E7A3A"
                 : item.type === "promo"
-                ? "#B95E2E"
+                ? colors.primary
                 : "#7B519D"
             }
           />
@@ -127,24 +131,34 @@ export default function NotificationsScreen() {
         <View className="ml-3.5 flex-1">
           <View className="flex-row items-center justify-between">
             <Text
+              style={{
+                color: item.read ? colors.text : colors.primary,
+              }}
               className={`text-sm ${
-                item.read
-                  ? "font-bold text-[#241C18]"
-                  : "font-extrabold text-[#B95E2E]"
+                item.read ? "font-bold" : "font-extrabold"
               }`}
             >
               {item.title}
             </Text>
             {!item.read && (
-              <View className="h-2 w-2 rounded-full bg-[#B95E2E]" />
+              <View
+                style={{ backgroundColor: colors.primary }}
+                className="h-2 w-2 rounded-full"
+              />
             )}
           </View>
 
-          <Text className="mt-1 text-xs leading-relaxed text-[#5E514A]">
+          <Text
+            style={{ color: colors.textSecondary }}
+            className="mt-1 text-xs leading-relaxed"
+          >
             {item.message}
           </Text>
 
-          <Text className="mt-2 text-[10px] text-[#A0948D]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mt-2 text-[10px]"
+          >
             {formattedDate}
           </Text>
         </View>
@@ -153,23 +167,40 @@ export default function NotificationsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{ backgroundColor: colors.cardAlt }}
+          className="h-10 w-10 items-center justify-center rounded-full"
         >
-          <Ionicons name="chevron-back" size={22} color="#241C18" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text className="text-base font-extrabold text-[#241C18]">
+        <Text
+          style={{ color: colors.text }}
+          className="text-base font-extrabold"
+        >
           Notifications
         </Text>
 
         {notifications.some((n) => !n.read) ? (
           <Pressable onPress={handleMarkAllRead}>
-            <Text className="text-xs font-bold text-[#B95E2E]">
+            <Text
+              style={{ color: colors.primary }}
+              className="text-xs font-bold"
+            >
               Mark all read
             </Text>
           </Pressable>
@@ -180,7 +211,7 @@ export default function NotificationsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#B95E2E" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -197,20 +228,35 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              tintColor="#B95E2E"
+              tintColor={colors.primary}
             />
           }
           ListEmptyComponent={
-            <View className="items-center rounded-3xl border border-[#EEE5DE] bg-white p-8 mt-6">
-              <View className="h-16 w-16 items-center justify-center rounded-2xl bg-[#FAF3EE]">
-                <Ionicons name="notifications-outline" size={32} color="#B95E2E" />
+            <View
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="items-center rounded-3xl border p-8 mt-6"
+            >
+              <View
+                style={{ backgroundColor: colors.chip }}
+                className="h-16 w-16 items-center justify-center rounded-2xl"
+              >
+                <Ionicons name="notifications-outline" size={32} color={colors.primary} />
               </View>
 
-              <Text className="mt-4 text-lg font-black text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="mt-4 text-lg font-black"
+              >
                 {"You're all caught up!"}
               </Text>
 
-              <Text className="mt-1 text-center text-xs leading-relaxed text-[#8A7D75]">
+              <Text
+                style={{ color: colors.muted }}
+                className="mt-1 text-center text-xs leading-relaxed"
+              >
                 Booking updates, reminders, and recommendations will appear here.
               </Text>
             </View>
