@@ -437,10 +437,17 @@ export default function BookingHistoryScreen() {
       >
         {(["upcoming", "completed", "cancelled"] as const).map((tab) => {
           const isActive = activeTab === tab;
-          const targetStatus = tab === "upcoming" ? "confirmed" : tab;
-          const count = bookings.filter(
-            (b) => getEffectiveBookingStatus(b) === targetStatus,
-          ).length;
+          const count = bookings.filter((b) => {
+            const s = getEffectiveBookingStatus(b);
+            if (tab === "upcoming") {
+              return s === "confirmed" || s === "pending" || s === "on_hold";
+            }
+            if (tab === "completed") return s === "completed";
+            if (tab === "cancelled") {
+              return s === "cancelled" || s === "rejected";
+            }
+            return false;
+          }).length;
           const label =
             tab === "upcoming"
               ? "Upcoming"

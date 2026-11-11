@@ -1,5 +1,4 @@
 import { Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -25,7 +24,6 @@ import {
   updateCafe,
 } from "../../src/services/firebase/cafes";
 import { auth } from "../../src/services/firebase/config";
-import { uploadCafeImage } from "../../src/services/firebase/storage";
 import type { OpeningHours } from "../../src/types/cafe";
 
 const CATEGORIES = [
@@ -84,6 +82,15 @@ const DAYS_OF_WEEK: (keyof OpeningHours)[] = [
   "sunday",
 ];
 
+const SAMPLE_IMAGE_PRESETS = [
+  { label: "☕ Specialty Coffee", url: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=800" },
+  { label: "🥐 Artisan Bakery", url: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=800" },
+  { label: "🌿 Cozy Interior", url: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800" },
+  { label: "🪑 Outdoor Patio", url: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800" },
+  { label: "💻 Study & Work", url: "https://images.unsplash.com/photo-1521017432531-fbd92d768814?w=800" },
+  { label: "🍰 Dessert Corner", url: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800" },
+];
+
 export default function EditCafeScreen() {
   const { colors, isDark } = useTheme();
   const { cafeId } = useLocalSearchParams<{ cafeId: string }>();
@@ -127,9 +134,9 @@ export default function EditCafeScreen() {
     sunday: { enabled: true, openTime: "09:00 AM", closeTime: "10:00 PM" },
   });
 
-  // Photos (existing remote URLs and new local URIs)
-  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
-  const [newImageUris, setNewImageUris] = useState<string[]>([]);
+  // Photos (Direct URLs)
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrlInput, setImageUrlInput] = useState<string>("");
 
   // Status
   const [isOpen, setIsOpen] = useState(true);
@@ -191,7 +198,7 @@ export default function EditCafeScreen() {
 
         // Prepopulate photos
         const photos = cafe.images && cafe.images.length > 0 ? cafe.images : cafe.image ? [cafe.image] : [];
-        setExistingPhotos(photos);
+        setImageUrls(photos);
 
         // Parse Opening Hours
         if (cafe.openingHours) {
@@ -229,47 +236,42 @@ export default function EditCafeScreen() {
     loadCafe();
   }, [cafeId]);
 
-  const handlePickImages = async () => {
-    try {
-      const permission =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Please grant camera roll permissions to upload café photos.",
-        );
-        return;
-      }
-
-      const totalExisting = existingPhotos.length + newImageUris.length;
-      if (totalExisting >= 8) {
-        Alert.alert("Maximum Limit", "You can upload at most 8 photos per café.");
-        return;
-      }
-
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsMultipleSelection: true,
-        selectionLimit: 8 - totalExisting,
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const uris = result.assets.map((asset) => asset.uri);
-        setNewImageUris((prev) => [...prev, ...uris]);
-      }
-    } catch (err) {
-      console.error("Image pick error:", err);
-      Alert.alert("Error", "Could not access photos library.");
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) {
+      Alert.alert("Invalid URL", "Please enter an image URL.");
+      return;
     }
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+      Alert.alert("Invalid URL", "Please enter a valid URL starting with http:// or https://");
+      return;
+    }
+    if (imageUrls.length >= 8) {
+      Alert.alert("Limit Reached", "You can add at most 8 photos per café.");
+      return;
+    }
+    if (imageUrls.includes(trimmed)) {
+      Alert.alert("Already Added", "This image URL has already been added.");
+      return;
+    }
+    setImageUrls((prev) => [...prev, trimmed]);
+    setImageUrlInput("");
   };
 
-  const handleRemoveExistingPhoto = (indexToRemove: number) => {
-    setExistingPhotos((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const handleAddPresetUrl = (url: string) => {
+    if (imageUrls.length >= 8) {
+      Alert.alert("Limit Reached", "You can add at most 8 photos per café.");
+      return;
+    }
+    if (imageUrls.includes(url)) {
+      Alert.alert("Already Added", "This photo has already been added.");
+      return;
+    }
+    setImageUrls((prev) => [...prev, url]);
   };
 
-  const handleRemoveNewPhoto = (indexToRemove: number) => {
-    setNewImageUris((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const handleRemoveImageUrl = (indexToRemove: number) => {
+    setImageUrls((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const toggleItem = (list: string[], item: string, setter: (val: string[]) => void) => {
@@ -350,28 +352,17 @@ export default function EditCafeScreen() {
       setErrorMsg("Please enter a valid seating capacity.");
       return;
     }
-    if (existingPhotos.length === 0 && newImageUris.length === 0) {
-      setErrorMsg("Please provide at least one photo for your café.");
+    if (imageUrls.length === 0) {
+      setErrorMsg("Please provide at least one photo URL for your café.");
       return;
     }
 
     setErrorMsg("");
     setSubmitting(true);
+    setUploadProgress("Updating café in Firestore...");
 
     try {
-      // 1. Upload new photos
-      const uploadedUrls: string[] = [];
-      for (let i = 0; i < newImageUris.length; i++) {
-        setUploadProgress(`Uploading photo ${i + 1} of ${newImageUris.length}...`);
-        const url = await uploadCafeImage(user.uid, newImageUris[i], i);
-        uploadedUrls.push(url);
-      }
-
-      const allPhotos = [...existingPhotos, ...uploadedUrls];
-
-      setUploadProgress("Updating café in Firestore...");
-
-      // 2. Build opening hours
+      // 1. Build opening hours
       const openingHoursFormatted: OpeningHours = {};
       DAYS_OF_WEEK.forEach((day) => {
         const d = schedule[day];
@@ -382,7 +373,7 @@ export default function EditCafeScreen() {
         }
       });
 
-      // 3. Update café document
+      // 2. Update café document
       await updateCafe(
         cafeId,
         {
@@ -393,8 +384,8 @@ export default function EditCafeScreen() {
           city: city.trim(),
           priceRange,
           category,
-          image: allPhotos[0] || "",
-          images: allPhotos,
+          image: imageUrls[0] || "",
+          images: imageUrls,
           phone: phone.trim(),
           website: website.trim(),
           openingHours: openingHoursFormatted,
@@ -438,7 +429,7 @@ export default function EditCafeScreen() {
     );
   }
 
-  const allPhotosCount = existingPhotos.length + newImageUris.length;
+  const allPhotosCount = imageUrls.length;
 
   return (
     <SafeAreaView
@@ -513,6 +504,67 @@ export default function EditCafeScreen() {
                 Café Photos ({allPhotosCount}/8)
               </Text>
             </View>
+            <Text style={[styles.helperText, { color: colors.muted }]}>
+              Enter image URLs directly. The first image is the hero cover on discovery cards.
+            </Text>
+
+            {/* URL Input Row */}
+            <View style={styles.urlInputRow}>
+              <TextInput
+                style={[
+                  styles.urlInput,
+                  {
+                    backgroundColor: colors.inputBackground,
+                    borderColor: colors.inputBorder,
+                    color: colors.text,
+                  },
+                ]}
+                placeholder="Paste Image URL (https://...)"
+                placeholderTextColor={colors.textMuted}
+                value={imageUrlInput}
+                onChangeText={setImageUrlInput}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+              <Pressable
+                onPress={handleAddImageUrl}
+                style={[styles.addUrlBtn, { backgroundColor: colors.primary }]}
+              >
+                <Ionicons name="add" size={18} color="#FFFFFF" />
+                <Text style={styles.addUrlBtnText}>Add</Text>
+              </Pressable>
+            </View>
+
+            {/* Quick Sample Presets */}
+            <View style={{ marginTop: 10 }}>
+              <Text style={[styles.presetLabel, { color: colors.muted }]}>
+                Sample Café Photos (Tap to add):
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 4 }}
+              >
+                {SAMPLE_IMAGE_PRESETS.map((preset) => (
+                  <Pressable
+                    key={preset.label}
+                    onPress={() => handleAddPresetUrl(preset.url)}
+                    style={[
+                      styles.presetChip,
+                      {
+                        backgroundColor: colors.chip,
+                        borderColor: colors.border,
+                      },
+                    ]}
+                  >
+                    <Text style={[styles.presetChipText, { color: colors.text }]}>
+                      + {preset.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
 
             {/* Photos Scroll */}
             {allPhotosCount > 0 && (
@@ -521,9 +573,8 @@ export default function EditCafeScreen() {
                 showsHorizontalScrollIndicator={false}
                 style={styles.photosScroll}
               >
-                {/* Existing Remote Photos */}
-                {existingPhotos.map((url, idx) => (
-                  <View key={`remote-${idx}`} style={styles.thumbnailWrapper}>
+                {imageUrls.map((url, idx) => (
+                  <View key={`${url}-${idx}`} style={styles.thumbnailWrapper}>
                     <Image source={{ uri: url }} style={styles.thumbnailImage} />
                     {idx === 0 && (
                       <View style={styles.coverBadge}>
@@ -531,23 +582,7 @@ export default function EditCafeScreen() {
                       </View>
                     )}
                     <Pressable
-                      onPress={() => handleRemoveExistingPhoto(idx)}
-                      style={styles.removeImageBtn}
-                    >
-                      <Ionicons name="close" size={14} color="#FFFFFF" />
-                    </Pressable>
-                  </View>
-                ))}
-
-                {/* Newly Picked Local Photos */}
-                {newImageUris.map((uri, idx) => (
-                  <View key={`local-${idx}`} style={styles.thumbnailWrapper}>
-                    <Image source={{ uri }} style={styles.thumbnailImage} />
-                    <View style={styles.newBadge}>
-                      <Text style={styles.newBadgeText}>New</Text>
-                    </View>
-                    <Pressable
-                      onPress={() => handleRemoveNewPhoto(idx)}
+                      onPress={() => handleRemoveImageUrl(idx)}
                       style={styles.removeImageBtn}
                     >
                       <Ionicons name="close" size={14} color="#FFFFFF" />
@@ -556,23 +591,6 @@ export default function EditCafeScreen() {
                 ))}
               </ScrollView>
             )}
-
-            <Pressable
-              onPress={handlePickImages}
-              disabled={submitting}
-              style={[
-                styles.pickButton,
-                {
-                  backgroundColor: colors.chip,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Ionicons name="camera-outline" size={20} color={colors.primary} />
-              <Text style={[styles.pickButtonText, { color: colors.primary }]}>
-                {allPhotosCount > 0 ? "Add More Photos" : "Select Photos"}
-              </Text>
-            </Pressable>
           </View>
 
           {/* SECTION 2: BASIC DETAILS */}
@@ -1299,20 +1317,49 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  pickButton: {
+  urlInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+  urlInput: {
+    flex: 1,
+    height: 44,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    fontSize: 14,
+  },
+  addUrlBtn: {
+    height: 44,
+    paddingHorizontal: 14,
+    borderRadius: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    marginTop: 10,
-    gap: 8,
+    gap: 4,
   },
-  pickButtonText: {
+  addUrlBtnText: {
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
+  },
+  presetLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  presetChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  presetChipText: {
+    fontSize: 12,
+    fontWeight: "500",
   },
   inputLabel: {
     fontSize: 13,

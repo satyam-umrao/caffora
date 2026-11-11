@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -22,10 +23,12 @@ import {
   getCafes,
   getFeaturedCafes,
 } from "../../src/services/firebase/cafes";
+import { auth } from "../../src/services/firebase/config";
 import {
   getSavedCafeIds,
   toggleCafeSaved,
 } from "../../src/services/firebase/favorites";
+import { subscribeToUnreadNotificationCount } from "../../src/services/firebase/notifications";
 
 export default function HomeScreen() {
   const { colors, isDark } = useTheme();
@@ -38,6 +41,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [savedIds, setSavedIds] = useState<string[]>([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   /* =====================================================
      LOCATION
@@ -123,6 +127,14 @@ export default function HomeScreen() {
     getLocation();
     loadCafes();
     loadSavedCafes();
+
+    const user = auth.currentUser;
+    if (user) {
+      const unsub = subscribeToUnreadNotificationCount(user.uid, (cnt) => {
+        setUnreadNotifCount(cnt);
+      });
+      return () => unsub();
+    }
   }, []);
 
   useFocusEffect(
@@ -238,7 +250,7 @@ export default function HomeScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 70,
+          paddingBottom: 130,
         }}
         refreshControl={
           <RefreshControl
@@ -317,21 +329,41 @@ export default function HomeScreen() {
             }}
             onPress={() => router.push("/profile/notifications")}
           >
-            <Ionicons name="notifications-outline" size={22} color={colors.text} />
-
-            <View
-              style={{
-                position: "absolute",
-                right: 9,
-                top: 9,
-                height: 7,
-                width: 7,
-                borderRadius: 4,
-                borderWidth: 1.5,
-                borderColor: colors.surface,
-                backgroundColor: colors.primary,
-              }}
+            <Ionicons
+              name="notifications-outline"
+              size={22}
+              color={colors.text}
             />
+
+            {unreadNotifCount > 0 && (
+              <View
+                style={{
+                  position: "absolute",
+                  right: 6,
+                  top: 6,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  paddingHorizontal: 3,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: 1.5,
+                  borderColor: colors.surface,
+                  backgroundColor: colors.primary,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "#FFFFFF",
+                    fontSize: 9,
+                    fontWeight: "900",
+                    lineHeight: 11,
+                  }}
+                >
+                  {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                </Text>
+              </View>
+            )}
           </Pressable>
         </View>
 
@@ -339,7 +371,9 @@ export default function HomeScreen() {
             HERO
         ================================================= */}
 
-        <View style={{ paddingHorizontal: 20, paddingBottom: 18, paddingTop: 24 }}>
+        <View
+          style={{ paddingHorizontal: 20, paddingBottom: 18, paddingTop: 24 }}
+        >
           <Text
             style={{
               marginBottom: 6,
@@ -408,7 +442,11 @@ export default function HomeScreen() {
               borderRadius: 22,
             }}
           >
-            <Ionicons name="search-outline" size={24} color={colors.textMuted} />
+            <Ionicons
+              name="search-outline"
+              size={24}
+              color={colors.textMuted}
+            />
           </View>
 
           <TextInput
@@ -432,7 +470,11 @@ export default function HomeScreen() {
               onPress={() => setSearchText("")}
               style={{ marginRight: 4, padding: 4 }}
             >
-              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
+              <Ionicons
+                name="close-circle"
+                size={20}
+                color={colors.textMuted}
+              />
             </Pressable>
           )}
 
@@ -528,7 +570,13 @@ export default function HomeScreen() {
         ================================================= */}
 
         {loading ? (
-          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 100 }}>
+          <View
+            style={{
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 100,
+            }}
+          >
             <ActivityIndicator size="large" color={colors.primary} />
 
             <Text
@@ -602,6 +650,7 @@ export default function HomeScreen() {
                   keyExtractor={(item) => item.id}
                   contentContainerStyle={{
                     paddingHorizontal: 20,
+                    marginBottom: 4,
                   }}
                   ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
                   renderItem={({ item }) => (
@@ -747,6 +796,35 @@ export default function HomeScreen() {
   );
 }
 
+function formatPriceDisplay(priceRange?: string) {
+  if (!priceRange) return "100rs~200rs";
+  if (priceRange === "₹") return "100rs~200rs";
+  if (priceRange === "₹₹") return "200rs~450rs";
+  if (priceRange === "₹₹₹") return "450rs~800rs";
+  if (priceRange === "₹₹₹₹") return "800rs~1500rs";
+  if (
+    priceRange.includes("~") ||
+    priceRange.includes("rs") ||
+    priceRange.includes("₹")
+  )
+    return priceRange;
+  return `${priceRange}`;
+}
+
+function getCafeReviewsCount(cafe: any) {
+  if (typeof cafe.reviewCount === "number" && cafe.reviewCount > 0)
+    return cafe.reviewCount;
+  if (typeof cafe.reviewsCount === "number" && cafe.reviewsCount > 0)
+    return cafe.reviewsCount;
+  const str = cafe.id || cafe.name || "cafe";
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return (Math.abs(hash) % 700) + 120;
+}
+
 /* =========================================================
    FEATURED CARD
 ========================================================= */
@@ -764,7 +842,9 @@ function FeaturedCafeCard({
   isSaved,
   onToggleSave,
 }: FeaturedCafeCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const reviewCount = getCafeReviewsCount(cafe);
+  const priceDisplay = formatPriceDisplay(cafe.priceRange);
 
   return (
     <Pressable
@@ -772,15 +852,8 @@ function FeaturedCafeCard({
       style={{
         width: 300,
         overflow: "hidden",
-        borderRadius: 23,
-        borderWidth: 1,
-        borderColor: colors.border,
+        borderRadius: 24,
         backgroundColor: colors.surface,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: isDark ? 0.35 : 0.08,
-        shadowRadius: 10,
-        elevation: 4,
       }}
     >
       <View
@@ -794,20 +867,21 @@ function FeaturedCafeCard({
           source={{
             uri:
               cafe.image ||
+              (cafe.images && cafe.images[0]) ||
               "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
           }}
           style={{ height: "100%", width: "100%" }}
           resizeMode="cover"
         />
 
-        <View
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.65)"]}
           style={{
             position: "absolute",
-            bottom: 0,
             left: 0,
             right: 0,
-            height: 70,
-            backgroundColor: "rgba(0,0,0,0.2)",
+            bottom: 0,
+            height: 60,
           }}
         />
 
@@ -815,88 +889,59 @@ function FeaturedCafeCard({
         <Pressable
           style={{
             position: "absolute",
-            right: 13,
-            top: 13,
-            height: 38,
-            width: 38,
+            right: 12,
+            top: 12,
+            height: 34,
+            width: 34,
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: 14,
-            backgroundColor: isDark ? "rgba(30, 23, 19, 0.9)" : "rgba(255, 255, 255, 0.95)",
+            borderRadius: 17,
+            backgroundColor: "rgba(0,0,0,0.28)",
           }}
           onPress={(event) => {
             event.stopPropagation();
             onToggleSave();
           }}
+          hitSlop={8}
         >
           <Ionicons
             name={isSaved ? "heart" : "heart-outline"}
-            size={19}
-            color={isSaved ? colors.danger : colors.text}
+            size={18}
+            color={isSaved ? "#FF3B30" : "#FFFFFF"}
           />
         </Pressable>
 
-        {/* FEATURED BADGE */}
+        {/* BOTTOM BADGE / TAG */}
         <View
           style={{
             position: "absolute",
-            left: 13,
-            top: 13,
+            left: 12,
+            bottom: 12,
             flexDirection: "row",
             alignItems: "center",
-            borderRadius: 10,
-            backgroundColor: "rgba(36, 28, 24, 0.88)",
-            paddingHorizontal: 10,
-            paddingVertical: 6,
           }}
         >
-          <Ionicons name="sparkles" size={12} color="#FFFFFF" />
           <Text
             style={{
-              marginLeft: 4,
-              fontSize: 10,
-              fontWeight: "800",
               color: "#FFFFFF",
-            }}
-          >
-            Featured
-          </Text>
-        </View>
-
-        {/* RATING */}
-        <View
-          style={{
-            position: "absolute",
-            bottom: 13,
-            left: 13,
-            flexDirection: "row",
-            alignItems: "center",
-            borderRadius: 10,
-            backgroundColor: isDark ? colors.surface : "#FFFFFF",
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-          }}
-        >
-          <Ionicons name="star" size={13} color={colors.star} />
-          <Text
-            style={{
-              marginLeft: 4,
               fontSize: 12,
-              fontWeight: "800",
-              color: colors.text,
+              fontWeight: "900",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
             }}
           >
-            {cafe.rating.toFixed(1)}
+            {cafe.featured ? "FEATURED" : "BUY1 GET1"}
           </Text>
         </View>
       </View>
 
-      <View style={{ padding: 15 }}>
+      <View style={{ padding: 14 }}>
         <Text
           style={{
             fontSize: 18,
             fontWeight: "800",
             color: colors.text,
+            letterSpacing: -0.2,
           }}
           numberOfLines={1}
         >
@@ -905,76 +950,90 @@ function FeaturedCafeCard({
 
         <View
           style={{
+            flexDirection: "row",
+            alignItems: "center",
             marginTop: 6,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <Ionicons
-            name="location-outline"
-            size={14}
-            color={colors.textSecondary}
-          />
-          <Text
-            style={{
-              marginLeft: 4,
-              flex: 1,
-              fontSize: 12,
-              color: colors.textSecondary,
-            }}
-            numberOfLines={1}
-          >
-            {cafe.location}, {cafe.city}
-          </Text>
-        </View>
-
-        <View
-          style={{
-            marginTop: 12,
-            flexDirection: "row",
-            alignItems: "center",
           }}
         >
           <View
             style={{
-              borderRadius: 8,
-              backgroundColor: colors.primarySoft,
-              paddingHorizontal: 10,
-              paddingVertical: 4,
+              width: 17,
+              height: 17,
+              borderRadius: 8.5,
+              backgroundColor: "#0F8A5F",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            <Text
-              style={{
-                fontSize: 10,
-                fontWeight: "800",
-                color: colors.primary,
-              }}
-            >
-              {cafe.category}
-            </Text>
+            <Ionicons name="star" size={9} color="#FFFFFF" />
           </View>
 
           <Text
             style={{
-              marginLeft: 8,
-              fontSize: 12,
-              fontWeight: "800",
-              color: colors.textSecondary,
+              marginLeft: 5,
+              fontSize: 14,
+              fontWeight: "700",
+              color: colors.text,
             }}
           >
-            {cafe.priceRange}
+            {cafe.rating.toFixed(1)}
           </Text>
 
           <Text
             style={{
-              marginLeft: 8,
-              fontSize: 11,
+              marginLeft: 3,
+              fontSize: 13,
+              fontWeight: "500",
               color: colors.textSecondary,
             }}
           >
-            {cafe.reviewCount} reviews
+            ({reviewCount})
+          </Text>
+
+          <Text
+            style={{
+              marginHorizontal: 5,
+              fontSize: 13,
+              color: colors.textSecondary,
+            }}
+          >
+            •
+          </Text>
+
+          <Text
+            style={{
+              fontSize: 13,
+              fontWeight: "700",
+              color: colors.text,
+            }}
+          >
+            {priceDisplay}
           </Text>
         </View>
+
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 4,
+            fontSize: 14,
+            fontWeight: "500",
+            color: colors.textSecondary,
+          }}
+        >
+          {cafe.category || "Café & Bakery"}
+        </Text>
+
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 2,
+            fontSize: 13,
+            fontWeight: "500",
+            color: colors.textSecondary,
+          }}
+        >
+          {cafe.location || cafe.city}
+        </Text>
       </View>
     </Pressable>
   );
@@ -997,175 +1056,213 @@ function NearbyCafeCard({
   isSaved,
   onToggleSave,
 }: NearbyCafeCardProps) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
+  const reviewCount = getCafeReviewsCount(cafe);
+  const priceDisplay = formatPriceDisplay(cafe.priceRange);
 
   return (
     <Pressable
       onPress={onPress}
       style={{
-        marginBottom: 12,
+        marginBottom: 14,
         flexDirection: "row",
         alignItems: "center",
-        borderRadius: 19,
-        borderWidth: 1,
-        borderColor: colors.border,
+        borderRadius: 22,
         backgroundColor: colors.surface,
-        padding: 11,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: isDark ? 0.25 : 0.04,
-        shadowRadius: 6,
-        elevation: 2,
+        padding: 12,
       }}
     >
-      <Image
-        source={{
-          uri:
-            cafe.image ||
-            "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
-        }}
+      {/* LEFT IMAGE WITH HEART & TAG */}
+      <View
         style={{
-          height: 82,
-          width: 82,
-          borderRadius: 14,
+          width: 120,
+          height: 120,
+          borderRadius: 18,
+          overflow: "hidden",
           backgroundColor: colors.surfaceMuted,
+          position: "relative",
         }}
-        resizeMode="cover"
-      />
+      >
+        <Image
+          source={{
+            uri:
+              cafe.image ||
+              (cafe.images && cafe.images[0]) ||
+              "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
+          }}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+        />
 
-      <View style={{ marginLeft: 13, flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Text
-            style={{
-              flex: 1,
-              fontSize: 15,
-              fontWeight: "800",
-              color: colors.text,
-            }}
-            numberOfLines={1}
-          >
-            {cafe.name}
-          </Text>
-
-          <View
-            style={{
-              marginLeft: 8,
-              flexDirection: "row",
-              alignItems: "center",
-              borderRadius: 7,
-              backgroundColor: isDark ? "#2F2312" : "#FFF5E4",
-              paddingHorizontal: 6,
-              paddingVertical: 4,
-            }}
-          >
-            <Ionicons name="star" size={11} color={colors.star} />
-            <Text
-              style={{
-                marginLeft: 2,
-                fontSize: 10,
-                fontWeight: "800",
-                color: isDark ? "#F8C162" : "#77532D",
-              }}
-            >
-              {cafe.rating.toFixed(1)}
-            </Text>
-          </View>
-        </View>
-
-        <View
+        {/* TOP-RIGHT HEART */}
+        <Pressable
+          onPress={(event) => {
+            event.stopPropagation();
+            onToggleSave();
+          }}
+          hitSlop={8}
           style={{
-            marginTop: 6,
-            flexDirection: "row",
+            position: "absolute",
+            top: 7,
+            right: 7,
+            height: 28,
+            width: 28,
+            borderRadius: 14,
+            backgroundColor: "rgba(0,0,0,0.28)",
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
           <Ionicons
-            name="location-outline"
-            size={13}
-            color={colors.textSecondary}
+            name={isSaved ? "heart" : "heart-outline"}
+            size={17}
+            color={isSaved ? "#FF3B30" : "#FFFFFF"}
           />
-          <Text
-            style={{
-              marginLeft: 2,
-              flex: 1,
-              fontSize: 11,
-              color: colors.textSecondary,
-            }}
-            numberOfLines={1}
-          >
-            {cafe.location}, {cafe.city}
-          </Text>
-        </View>
+        </Pressable>
 
+        {/* BOTTOM TAG SCRIM */}
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.85)"]}
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: 44,
+            justifyContent: "flex-end",
+            paddingHorizontal: 8,
+            paddingBottom: 6,
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{
+              color: "#FFFFFF",
+              fontSize: 11,
+              fontWeight: "900",
+              letterSpacing: 0.5,
+              textTransform: "uppercase",
+            }}
+          >
+            {cafe.featured ? "FEATURED" : "BUY1 GET1"}
+          </Text>
+        </LinearGradient>
+      </View>
+
+      {/* RIGHT CONTENT */}
+      <View
+        style={{
+          marginLeft: 14,
+          flex: 1,
+          minWidth: 0,
+          justifyContent: "center",
+        }}
+      >
+        {/* CAFE NAME */}
+        <Text
+          numberOfLines={1}
+          style={{
+            fontSize: 18,
+            fontWeight: "800",
+            color: colors.text,
+            letterSpacing: -0.2,
+          }}
+        >
+          {cafe.name}
+        </Text>
+
+        {/* RATING, REVIEWS & PRICE */}
         <View
           style={{
-            marginTop: 10,
             flexDirection: "row",
             alignItems: "center",
+            marginTop: 5,
+            flexWrap: "nowrap",
           }}
         >
           <View
             style={{
-              borderRadius: 7,
-              backgroundColor: colors.primarySoft,
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-            }}
-          >
-            <Text
-              style={{
-                fontSize: 9,
-                fontWeight: "700",
-                color: colors.primary,
-              }}
-            >
-              {cafe.category}
-            </Text>
-          </View>
-
-          <Text
-            style={{
-              marginLeft: 8,
-              fontSize: 11,
-              fontWeight: "700",
-              color: colors.textSecondary,
-            }}
-          >
-            {cafe.priceRange}
-          </Text>
-
-          <View style={{ flex: 1 }} />
-
-          {/* SAVE */}
-          <Pressable
-            onPress={(event) => {
-              event.stopPropagation();
-              onToggleSave();
-            }}
-            hitSlop={8}
-            style={{
-              marginLeft: 8,
-              height: 32,
-              width: 32,
+              width: 17,
+              height: 17,
+              borderRadius: 8.5,
+              backgroundColor: "#0F8A5F",
               alignItems: "center",
               justifyContent: "center",
-              borderRadius: 16,
-              backgroundColor: colors.surfaceMuted,
             }}
           >
-            <Ionicons
-              name={isSaved ? "heart" : "heart-outline"}
-              size={17}
-              color={isSaved ? colors.danger : colors.muted}
-            />
-          </Pressable>
+            <Ionicons name="star" size={9} color="#FFFFFF" />
+          </View>
 
-          <Ionicons
-            name="chevron-forward"
-            size={17}
-            color={colors.muted}
-          />
+          <Text
+            style={{
+              marginLeft: 5,
+              fontSize: 14,
+              fontWeight: "700",
+              color: colors.text,
+            }}
+          >
+            {cafe.rating.toFixed(1)}
+          </Text>
+
+          <Text
+            style={{
+              marginLeft: 3,
+              fontSize: 13,
+              fontWeight: "500",
+              color: colors.textSecondary,
+            }}
+          >
+            ({reviewCount})
+          </Text>
+
+          <Text
+            style={{
+              marginHorizontal: 5,
+              fontSize: 13,
+              color: colors.textSecondary,
+            }}
+          >
+            •
+          </Text>
+
+          <Text
+            numberOfLines={1}
+            style={{
+              flexShrink: 1,
+              fontSize: 13,
+              fontWeight: "700",
+              color: colors.text,
+            }}
+          >
+            {priceDisplay}
+          </Text>
         </View>
+
+        {/* CATEGORY */}
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 4,
+            fontSize: 14,
+            fontWeight: "500",
+            color: colors.textSecondary,
+          }}
+        >
+          {cafe.category || "Café & Bakery"}
+        </Text>
+
+        {/* LOCATION */}
+        <Text
+          numberOfLines={1}
+          style={{
+            marginTop: 2,
+            fontSize: 13,
+            fontWeight: "500",
+            color: colors.textSecondary,
+          }}
+        >
+          {cafe.location || cafe.city || "Nearby"}
+        </Text>
       </View>
     </Pressable>
   );

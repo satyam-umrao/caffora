@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../src/context/ThemeContext";
 import { openDirections } from "../../src/services/deepLinks/directions";
 import { makePhoneCall } from "../../src/services/deepLinks/phone";
+import { auth } from "../../src/services/firebase/config";
 import {
   cancelBooking,
   getEffectiveBookingStatus,
@@ -138,10 +139,14 @@ export default function BookingDetailsModal() {
   }
 
   const effectiveStatus = getEffectiveBookingStatus(booking);
+  const currentUserId = auth.currentUser?.uid;
+  const isOwner = Boolean(currentUserId && booking.ownerId === currentUserId);
+  const isCustomer = Boolean(currentUserId && booking.userId === currentUserId);
   const canCancel =
-    effectiveStatus === "confirmed" ||
-    effectiveStatus === "pending" ||
-    effectiveStatus === "on_hold";
+    isCustomer &&
+    (effectiveStatus === "confirmed" ||
+      effectiveStatus === "pending" ||
+      effectiveStatus === "on_hold");
 
   const getStatusBadgeMeta = (status: BookingStatus) => {
     switch (status) {
@@ -472,7 +477,50 @@ export default function BookingDetailsModal() {
 
         {/* Action Shortcuts */}
         <View className="mt-5 flex-row gap-3">
-          {cafeCoords && (
+          {/* If Owner: Call Customer button */}
+          {isOwner && booking.userPhone ? (
+            <Pressable
+              onPress={() => makePhoneCall(booking.userPhone || "")}
+              style={{
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              }}
+              className="flex-1 flex-row items-center justify-center rounded-2xl border py-3.5"
+            >
+              <Ionicons name="call-outline" size={18} color={colors.primary} />
+              <Text
+                style={{ color: colors.text }}
+                className="ml-2 text-xs font-bold"
+              >
+                Call Guest
+              </Text>
+            </Pressable>
+          ) : null}
+
+          {/* If Owner: Manage in Owner Requests */}
+          {isOwner && (effectiveStatus === "pending" || effectiveStatus === "on_hold") && (
+            <Pressable
+              onPress={() => {
+                router.dismiss();
+                router.push({
+                  pathname: "/(owner)/bookings",
+                  params: { initialTab: effectiveStatus },
+                });
+              }}
+              style={{
+                backgroundColor: colors.primary,
+              }}
+              className="flex-1 flex-row items-center justify-center rounded-2xl py-3.5"
+            >
+              <Ionicons name="clipboard-outline" size={18} color="#FFFFFF" />
+              <Text className="ml-2 text-xs font-bold text-white">
+                Decide Request
+              </Text>
+            </Pressable>
+          )}
+
+          {/* If Customer: Directions to Cafe */}
+          {!isOwner && cafeCoords && (
             <Pressable
               onPress={() =>
                 openDirections(cafeCoords.lat, cafeCoords.lng, booking.cafeName)
@@ -497,7 +545,8 @@ export default function BookingDetailsModal() {
             </Pressable>
           )}
 
-          {cafePhone ? (
+          {/* If Customer: Call Cafe */}
+          {!isOwner && cafePhone ? (
             <Pressable
               onPress={() => makePhoneCall(cafePhone)}
               style={{
@@ -517,7 +566,7 @@ export default function BookingDetailsModal() {
           ) : null}
         </View>
 
-        {/* Cancel Action */}
+        {/* Customer Cancel Action */}
         {canCancel && (
           <Pressable
             onPress={handleCancel}

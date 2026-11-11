@@ -23,6 +23,7 @@ import {
 } from "../../src/services/firebase/bookings";
 import { getOwnerCafes, isCafeOpenNow } from "../../src/services/firebase/cafes";
 import { auth } from "../../src/services/firebase/config";
+import { subscribeToUnreadNotificationCount } from "../../src/services/firebase/notifications";
 import { getUserProfile } from "../../src/services/firebase/users";
 import type { Booking } from "../../src/types/booking";
 import type { Cafe } from "../../src/types/cafe";
@@ -36,6 +37,7 @@ export default function OwnerDashboardScreen() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   const currentUser = auth.currentUser;
 
@@ -64,7 +66,8 @@ export default function OwnerDashboardScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!currentUser) {
+      const user = auth.currentUser;
+      if (!user) {
         router.replace("/(auth)/login");
         return;
       }
@@ -73,16 +76,25 @@ export default function OwnerDashboardScreen() {
 
       // Real-time listener for live booking metrics
       const unsubscribeBookings = subscribeToOwnerBookings(
-        currentUser.uid,
+        user.uid,
         (updatedBookings) => {
           setBookings(updatedBookings);
         },
       );
 
+      // Real-time listener for live unread notifications count
+      const unsubscribeNotifs = subscribeToUnreadNotificationCount(
+        user.uid,
+        (count) => {
+          setUnreadNotifCount(count);
+        },
+      );
+
       return () => {
         unsubscribeBookings();
+        unsubscribeNotifs();
       };
-    }, [currentUser, loadData]),
+    }, [loadData]),
   );
 
   const onRefresh = () => {
@@ -200,19 +212,73 @@ export default function OwnerDashboardScreen() {
             </Text>
           </View>
 
-          <Pressable
-            onPress={handleLogout}
-            style={[
-              styles.logoutButton,
-              {
-                backgroundColor: isDark ? "#381816" : "#FFF5F5",
-                borderColor: isDark ? "#5C2622" : "#F6D7D5",
-              },
-            ]}
-          >
-            <Ionicons name="log-out-outline" size={16} color="#D95445" />
-            <Text style={styles.logoutText}>Log Out</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            {/* Live Notifications Bell */}
+            <Pressable
+              onPress={() => router.push("/profile/notifications")}
+              style={{
+                position: "relative",
+                height: 36,
+                width: 36,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 18,
+                borderWidth: 1,
+                borderColor: colors.border,
+                backgroundColor: colors.surface,
+              }}
+              hitSlop={6}
+            >
+              <Ionicons
+                name="notifications-outline"
+                size={18}
+                color={colors.text}
+              />
+              {unreadNotifCount > 0 && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: -2,
+                    right: -2,
+                    minWidth: 16,
+                    height: 16,
+                    borderRadius: 8,
+                    paddingHorizontal: 3,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    borderWidth: 1.5,
+                    borderColor: colors.surface,
+                    backgroundColor: colors.primary,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontSize: 9,
+                      fontWeight: "900",
+                      lineHeight: 11,
+                    }}
+                  >
+                    {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            <Pressable
+              onPress={handleLogout}
+              style={[
+                styles.logoutButton,
+                {
+                  backgroundColor: isDark ? "#381816" : "#FFF5F5",
+                  borderColor: isDark ? "#5C2622" : "#F6D7D5",
+                },
+              ]}
+            >
+              <Ionicons name="log-out-outline" size={16} color="#D95445" />
+              <Text style={styles.logoutText}>Log Out</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.ownerInfo}>

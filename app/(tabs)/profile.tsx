@@ -167,7 +167,7 @@ export default function ProfileScreen() {
           backgroundColor: COLORS.background,
         }}
         contentContainerStyle={{
-          paddingBottom: 70,
+          paddingBottom: 130,
         }}
       >
         {/* ====================================================
