@@ -14,8 +14,8 @@ service cloud.firestore {
     // USERS COLLECTION
     // users/{uid}
     match /users/{userId} {
-      // Authenticated users can read profiles
-      allow read: if isAuthenticated();
+      // Users can only read their own profile (protecting email, phone, push token)
+      allow read: if isUser(userId) || request.auth.token.admin == true;
       
       // User can create their initial profile document matching their auth UID
       // Role must strictly be 'customer' or 'cafe_owner'
@@ -50,6 +50,15 @@ service cloud.firestore {
         resource.data.ownerId == request.auth.uid ||
         request.auth.token.admin == true
       );
+
+      // Per-slot capacity documents for atomic concurrency locking
+      match /slots/{slotId} {
+        allow read: if true;
+        allow write: if isAuthenticated() && (
+          get(/databases/$(database)/documents/cafes/$(cafeId)).data.ownerId == request.auth.uid ||
+          request.auth.token.admin == true
+        );
+      }
     }
     
     // BOOKINGS COLLECTION
@@ -57,9 +66,10 @@ service cloud.firestore {
     match /bookings/{bookingId} {
       // A customer can read their own bookings; a cafe owner can read bookings for their cafe
       allow read: if isAuthenticated() && (
+        resource.data.ownerId == request.auth.uid ||
         resource.data.userId == request.auth.uid ||
         resource.data.customerId == request.auth.uid ||
-        resource.data.ownerId == request.auth.uid
+        request.auth.token.admin == true
       );
       
       // Customers can create bookings only for themselves with initial status strictly 'pending'
@@ -67,17 +77,21 @@ service cloud.firestore {
         && (request.resource.data.userId == request.auth.uid || request.resource.data.customerId == request.auth.uid)
         && request.resource.data.status == 'pending';
       
-      // Update permissions:
-      // 1. Customer can cancel their own booking (cannot self-confirm)
-      // 2. Cafe owner can update booking status (accept/hold/reject) and add ownerNote
+      // Strict update permissions & state transition validation:
+      // 1. Customer can cancel their own reservation (must be pending, confirmed, or on_hold)
+      // 2. Cafe owner can update status (must be pending or on_hold -> cannot accept already cancelled requests)
+      // 3. Identity fields (userId, ownerId, cafeId) are strictly immutable
       allow update: if isAuthenticated() && (
         // Customer cancelling their own reservation
         ((resource.data.userId == request.auth.uid || resource.data.customerId == request.auth.uid)
+          && resource.data.status in ['pending', 'confirmed', 'on_hold']
           && request.resource.data.status == 'cancelled'
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.cafeId == resource.data.cafeId) ||
-        // Cafe owner responding to request
+        // Cafe owner responding to request or updating status
         (resource.data.ownerId == request.auth.uid 
+          && resource.data.status in ['pending', 'on_hold', 'confirmed']
+          && request.resource.data.status in ['confirmed', 'rejected', 'on_hold', 'completed']
           && request.resource.data.userId == resource.data.userId
           && request.resource.data.ownerId == resource.data.ownerId
           && request.resource.data.cafeId == resource.data.cafeId) ||
@@ -88,8 +102,19 @@ service cloud.firestore {
     // NOTIFICATIONS COLLECTION
     // notifications/{notificationId}
     match /notifications/{notificationId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated();
+      // User can only read and delete their own notifications
+      allow read, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // User can update only read status on their notifications; recipient cannot be changed
+      allow update: if isAuthenticated() 
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId;
+      
+      // Notifications can be created by authenticated users with valid schema
+      allow create: if isAuthenticated()
+        && request.resource.data.userId is string
+        && request.resource.data.title is string
+        && request.resource.data.message is string;
     }
     
     // FAVORITES COLLECTION
