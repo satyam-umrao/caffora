@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SystemUI from "expo-system-ui";
 import { colorScheme as nwColorScheme } from "nativewind";
 import React, {
   createContext,
@@ -155,6 +156,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const colors = useMemo(() => {
     return isDark ? darkColors : lightColors;
   }, [isDark]);
+
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.background).catch(() => {});
+  }, [colors.background]);
 
   const setThemeMode = useCallback(
     async (mode: ThemeMode) => {

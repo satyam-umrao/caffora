@@ -1,12 +1,37 @@
 import { StatusBar } from "expo-status-bar";
 import { Stack } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
+import { LogBox } from "react-native";
 
 import { ThemeProvider, useTheme } from "../src/context/ThemeContext";
+import { setupNotificationResponseListener } from "../src/services/notifications/pushNotifications";
 import "../global.css";
+
+// Filter development-only upstream race warning between React 19 concurrent reconciler and Expo Router useLinking
+LogBox.ignoreLogs([
+  "Can't perform a React state update on a component that hasn't mounted yet",
+]);
+
+if (__DEV__) {
+  const origError = console.error;
+  console.error = (...args: any[]) => {
+    if (
+      typeof args[0] === "string" &&
+      args[0].includes("Can't perform a React state update on a component that hasn't mounted yet")
+    ) {
+      return;
+    }
+    origError(...args);
+  };
+}
 
 function RootStack() {
   const { colors, isDark } = useTheme();
+
+  useEffect(() => {
+    const unsub = setupNotificationResponseListener();
+    return () => unsub();
+  }, []);
 
   return (
     <>

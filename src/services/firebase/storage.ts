@@ -3,20 +3,26 @@ import { storage } from "./config";
 
 /**
  * Helper to convert a local file URI to a Blob for Firebase Storage upload in React Native.
+ * Uses fetch() first with fallback to XMLHttpRequest.
  */
 async function uriToBlob(uri: string): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.onload = function () {
-      resolve(xhr.response);
-    };
-    xhr.onerror = function (e) {
-      reject(new TypeError("Network request failed while creating image blob"));
-    };
-    xhr.responseType = "blob";
-    xhr.open("GET", uri, true);
-    xhr.send(null);
-  });
+  try {
+    const res = await fetch(uri);
+    return await res.blob();
+  } catch {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.onload = function () {
+        resolve(xhr.response);
+      };
+      xhr.onerror = function () {
+        reject(new TypeError("Network request failed while creating image blob"));
+      };
+      xhr.responseType = "blob";
+      xhr.open("GET", uri, true);
+      xhr.send(null);
+    });
+  }
 }
 
 /**
@@ -36,7 +42,12 @@ export async function uploadProfileImage(
     const filename = `avatar_${Date.now()}.jpg`;
     const storageRef = ref(storage, `users/${userId}/${filename}`);
 
-    const snapshot = await uploadBytes(storageRef, blob);
+    const metadata = {
+      contentType: "image/jpeg",
+      cacheControl: "public,max-age=31536000",
+    };
+
+    const snapshot = await uploadBytes(storageRef, blob, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
 
     // Clean up blob if possible
@@ -65,7 +76,12 @@ export async function uploadReviewImage(
     const filename = `${cafeId}_${Date.now()}.jpg`;
     const storageRef = ref(storage, `reviews/${userId}/${filename}`);
 
-    const snapshot = await uploadBytes(storageRef, blob);
+    const metadata = {
+      contentType: "image/jpeg",
+      cacheControl: "public,max-age=31536000",
+    };
+
+    const snapshot = await uploadBytes(storageRef, blob, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
 
     if ("close" in blob && typeof (blob as any).close === "function") {
@@ -97,7 +113,12 @@ export async function uploadCafeImage(
     const filename = `cafe_${Date.now()}_${index}.jpg`;
     const storageRef = ref(storage, `cafes/${ownerId}/${filename}`);
 
-    const snapshot = await uploadBytes(storageRef, blob);
+    const metadata = {
+      contentType: "image/jpeg",
+      cacheControl: "public,max-age=31536000",
+    };
+
+    const snapshot = await uploadBytes(storageRef, blob, metadata);
     const downloadUrl = await getDownloadURL(snapshot.ref);
 
     if ("close" in blob && typeof (blob as any).close === "function") {

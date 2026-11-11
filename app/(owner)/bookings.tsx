@@ -30,6 +30,8 @@ import type { Booking, BookingStatus } from "../../src/types/booking";
 
 type FilterTab =
   | "all"
+  | "active"
+  | "completed"
   | "pending"
   | "confirmed"
   | "on_hold"
@@ -38,9 +40,11 @@ type FilterTab =
 
 const FILTER_TABS: { key: FilterTab; label: string }[] = [
   { key: "all", label: "All" },
+  { key: "active", label: "Active" },
   { key: "pending", label: "Pending" },
   { key: "confirmed", label: "Confirmed" },
   { key: "on_hold", label: "On Hold" },
+  { key: "completed", label: "Completed" },
   { key: "rejected", label: "Rejected" },
   { key: "cancelled", label: "Cancelled" },
 ];
@@ -70,20 +74,23 @@ export default function OwnerBookingsScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (!currentUser) {
+      const user = auth.currentUser;
+      if (!user) {
         router.replace("/(auth)/login");
         return;
       }
 
       const unsubscribe = subscribeToOwnerBookings(
-        currentUser.uid,
+        user.uid,
         (list) => {
           setBookings(list);
           setLoading(false);
           setRefreshing(false);
         },
-        (err) => {
-          console.error("subscribeToOwnerBookings error:", err);
+        (err: any) => {
+          if (err?.code !== "permission-denied") {
+            console.warn("subscribeToOwnerBookings error:", err);
+          }
           setLoading(false);
           setRefreshing(false);
         },
@@ -92,14 +99,15 @@ export default function OwnerBookingsScreen() {
       return () => {
         unsubscribe();
       };
-    }, [currentUser]),
+    }, []),
   );
 
   const onRefresh = async () => {
-    if (!currentUser) return;
+    const user = auth.currentUser;
+    if (!user) return;
     setRefreshing(true);
     try {
-      const data = await getOwnerBookings(currentUser.uid);
+      const data = await getOwnerBookings(user.uid);
       setBookings(data);
     } catch (err) {
       console.error("Refresh error:", err);
@@ -114,6 +122,13 @@ export default function OwnerBookingsScreen() {
       const status = getEffectiveBookingStatus(b);
 
       // Tab Filter
+      if (
+        activeTab === "active" &&
+        !(status === "pending" || status === "confirmed" || status === "on_hold")
+      ) {
+        return false;
+      }
+      if (activeTab === "completed" && status !== "completed") return false;
       if (activeTab === "pending" && status !== "pending") return false;
       if (activeTab === "confirmed" && status !== "confirmed") return false;
       if (activeTab === "on_hold" && status !== "on_hold") return false;
@@ -137,6 +152,8 @@ export default function OwnerBookingsScreen() {
   const counts = useMemo(() => {
     const res: Record<FilterTab, number> = {
       all: bookings.length,
+      active: 0,
+      completed: 0,
       pending: 0,
       confirmed: 0,
       on_hold: 0,
@@ -146,6 +163,8 @@ export default function OwnerBookingsScreen() {
 
     bookings.forEach((b) => {
       const s = getEffectiveBookingStatus(b);
+      if (s === "pending" || s === "confirmed" || s === "on_hold") res.active++;
+      if (s === "completed") res.completed++;
       if (s === "pending") res.pending++;
       else if (s === "confirmed") res.confirmed++;
       else if (s === "on_hold") res.on_hold++;
@@ -333,8 +352,16 @@ export default function OwnerBookingsScreen() {
           </View>
         </View>
 
-        {/* Customer Information */}
-        <View style={styles.customerRow}>
+        {/* Customer Information (Clickable for quick details) */}
+        <Pressable
+          onPress={() =>
+            router.push({
+              pathname: "/modal/booking-details",
+              params: { bookingId: item.id },
+            })
+          }
+          style={styles.customerRow}
+        >
           <View style={styles.customerInfo}>
             <Text
               style={[styles.customerName, { color: colors.text }]}
@@ -362,7 +389,7 @@ export default function OwnerBookingsScreen() {
               <Ionicons name="call" size={15} color={colors.primary} />
             </Pressable>
           ) : null}
-        </View>
+        </Pressable>
 
         {/* Reservation Details Grid */}
         <View
@@ -549,6 +576,42 @@ export default function OwnerBookingsScreen() {
             </Pressable>
           </View>
         )}
+
+        {/* Details Navigation Shortcut */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            alignItems: "center",
+            marginTop: 10,
+            paddingTop: 8,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+          }}
+        >
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/modal/booking-details",
+                params: { bookingId: item.id },
+              })
+            }
+            hitSlop={6}
+            style={{ flexDirection: "row", alignItems: "center" }}
+          >
+            <Text
+              style={{
+                color: colors.primary,
+                fontSize: 12,
+                fontWeight: "700",
+                marginRight: 4,
+              }}
+            >
+              View Full Details
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={colors.primary} />
+          </Pressable>
+        </View>
       </View>
     );
   };

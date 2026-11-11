@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   RefreshControl,
@@ -13,10 +14,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { auth } from "../../src/services/firebase/config";
 import {
-  getUserNotifications,
+  clearAllNotifications,
+  deleteNotification,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  subscribeToUserNotifications,
 } from "../../src/services/firebase/notifications";
+import { getUserProfile } from "../../src/services/firebase/users";
 import type { AppNotification } from "../../src/types/database";
 import { useTheme } from "../../src/context/ThemeContext";
 
@@ -25,46 +29,116 @@ export default function NotificationsScreen() {
   const currentUser = auth.currentUser;
 
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(currentUser));
   const [refreshing, setRefreshing] = useState(false);
+  const [userRole, setUserRole] = useState<string>("customer");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const loadNotifications = useCallback(async () => {
-    if (!currentUser) {
-      setNotifications([]);
-      setLoading(false);
-      setRefreshing(false);
-      return;
-    }
-
-    try {
-      const list = await getUserNotifications(currentUser.uid);
-      setNotifications(list);
-    } catch (err) {
-      console.error("Load notifications error:", err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [currentUser]);
-
+  // Subscribe to real-time notifications
   useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    if (!currentUser) return;
+
+    // Load role to handle smart routing
+    getUserProfile(currentUser.uid)
+      .then((profile) => {
+        if (profile?.role) {
+          setUserRole(profile.role);
+        }
+      })
+      .catch(() => {});
+
+    const unsubscribe = subscribeToUserNotifications(
+      currentUser.uid,
+      (list) => {
+        setNotifications(list);
+        setLoading(false);
+        setRefreshing(false);
+      },
+      (err) => {
+        console.error("Notifications listener error:", err);
+        setErrorMsg("Failed to load live notifications.");
+        setLoading(false);
+        setRefreshing(false);
+      },
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [currentUser]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadNotifications();
+    // Realtime listener handles updates; this simulates manual pull feedback
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 600);
   };
 
   const handleMarkAllRead = async () => {
     if (!currentUser) return;
-    await markAllNotificationsAsRead(currentUser.uid);
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await markAllNotificationsAsRead(currentUser.uid);
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    } catch {
+      Alert.alert("Error", "Could not mark notifications as read.");
+    }
+  };
+
+  const handleClearAll = () => {
+    if (!currentUser || notifications.length === 0) return;
+
+    Alert.alert(
+      "Clear All Notifications?",
+      "Are you sure you want to delete all notifications? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await clearAllNotifications(currentUser.uid);
+              setNotifications([]);
+            } catch {
+              Alert.alert("Error", "Could not clear notifications.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteNotification = (notificationId: string) => {
+    if (!currentUser) return;
+
+    Alert.alert(
+      "Delete Notification",
+      "Remove this notification from your list?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteNotification(currentUser.uid, notificationId);
+              setNotifications((prev) =>
+                prev.filter((n) => n.id !== notificationId),
+              );
+            } catch {
+              Alert.alert("Error", "Could not delete notification.");
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleNotificationPress = async (item: AppNotification) => {
     if (!currentUser) return;
 
+    // Mark as read immediately
     if (!item.read) {
       await markNotificationAsRead(currentUser.uid, item.id);
       setNotifications((prev) =>
@@ -72,8 +146,26 @@ export default function NotificationsScreen() {
       );
     }
 
-    if (item.type === "booking") {
-      router.push("/booking/history");
+    const bookingId = item.data?.bookingId;
+    const cafeId = item.data?.cafeId;
+
+    if (bookingId) {
+      if (userRole === "cafe_owner") {
+        router.push("/(owner)/bookings");
+      } else {
+        router.push({
+          pathname: "/modal/booking-details",
+          params: { bookingId },
+        });
+      }
+    } else if (cafeId) {
+      router.push(`/cafe/${cafeId}` as any);
+    } else if (item.type === "booking") {
+      if (userRole === "cafe_owner") {
+        router.push("/(owner)/bookings");
+      } else {
+        router.push("/booking/history");
+      }
     }
   };
 
@@ -87,6 +179,9 @@ export default function NotificationsScreen() {
         })
       : "Recently";
 
+    const isBooking = item.type === "booking";
+    const isPromo = item.type === "promo";
+
     return (
       <Pressable
         onPress={() => handleNotificationPress(item)}
@@ -94,33 +189,32 @@ export default function NotificationsScreen() {
           backgroundColor: item.read ? colors.surface : colors.cardAlt,
           borderColor: item.read ? colors.border : colors.primary,
         }}
-        className="mb-3 flex-row items-start rounded-2xl border p-4"
+        className="mb-3 flex-row items-start rounded-2xl border p-4 shadow-sm"
       >
         {/* Icon based on notification type */}
         <View
           style={{
-            backgroundColor:
-              item.type === "booking"
-                ? isDark ? "#17341E" : "#EBF7EE"
-                : item.type === "promo"
-                ? colors.chip
-                : isDark ? "#2A1B3D" : "#F3EEFA",
+            backgroundColor: isBooking
+              ? isDark ? "#17341E" : "#EBF7EE"
+              : isPromo
+              ? colors.chip
+              : isDark ? "#2A1B3D" : "#F3EEFA",
           }}
           className="h-11 w-11 items-center justify-center rounded-xl"
         >
           <Ionicons
             name={
-              item.type === "booking"
+              isBooking
                 ? "calendar"
-                : item.type === "promo"
+                : isPromo
                 ? "sparkles"
                 : "notifications"
             }
             size={20}
             color={
-              item.type === "booking"
+              isBooking
                 ? "#2E7A3A"
-                : item.type === "promo"
+                : isPromo
                 ? colors.primary
                 : "#7B519D"
             }
@@ -137,13 +231,14 @@ export default function NotificationsScreen() {
               className={`text-sm ${
                 item.read ? "font-bold" : "font-extrabold"
               }`}
+              numberOfLines={1}
             >
               {item.title}
             </Text>
             {!item.read && (
               <View
                 style={{ backgroundColor: colors.primary }}
-                className="h-2 w-2 rounded-full"
+                className="h-2 w-2 rounded-full ml-1"
               />
             )}
           </View>
@@ -155,16 +250,32 @@ export default function NotificationsScreen() {
             {item.message}
           </Text>
 
-          <Text
-            style={{ color: colors.muted }}
-            className="mt-2 text-[10px]"
-          >
-            {formattedDate}
-          </Text>
+          <View className="mt-2.5 flex-row items-center justify-between">
+            <Text
+              style={{ color: colors.muted }}
+              className="text-[10px]"
+            >
+              {formattedDate}
+            </Text>
+
+            <Pressable
+              onPress={() => handleDeleteNotification(item.id)}
+              hitSlop={8}
+              className="p-1"
+            >
+              <Ionicons
+                name="trash-outline"
+                size={14}
+                color={colors.muted}
+              />
+            </Pressable>
+          </View>
         </View>
       </Pressable>
     );
   };
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <SafeAreaView
@@ -188,30 +299,71 @@ export default function NotificationsScreen() {
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text
-          style={{ color: colors.text }}
-          className="text-base font-extrabold"
-        >
-          Notifications
-        </Text>
-
-        {notifications.some((n) => !n.read) ? (
-          <Pressable onPress={handleMarkAllRead}>
+        <View className="items-center">
+          <Text
+            style={{ color: colors.text }}
+            className="text-base font-extrabold"
+          >
+            Notifications
+          </Text>
+          {unreadCount > 0 && (
             <Text
               style={{ color: colors.primary }}
-              className="text-xs font-bold"
+              className="text-[10px] font-bold"
             >
-              Mark all read
+              {unreadCount} unread
             </Text>
-          </Pressable>
-        ) : (
-          <View className="w-10" />
-        )}
+          )}
+        </View>
+
+        <View className="flex-row items-center gap-2">
+          {unreadCount > 0 && (
+            <Pressable onPress={handleMarkAllRead}>
+              <Text
+                style={{ color: colors.primary }}
+                className="text-xs font-bold"
+              >
+                Mark all read
+              </Text>
+            </Pressable>
+          )}
+
+          {notifications.length > 0 && (
+            <Pressable
+              onPress={handleClearAll}
+              style={{ backgroundColor: colors.cardAlt }}
+              className="h-8 w-8 items-center justify-center rounded-full ml-1"
+              hitSlop={6}
+            >
+              <Ionicons name="trash-outline" size={16} color={colors.muted} />
+            </Pressable>
+          )}
+
+          {notifications.length === 0 && <View className="w-10" />}
+        </View>
       </View>
 
+      {/* Body */}
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : errorMsg ? (
+        <View className="flex-1 items-center justify-center px-6">
+          <Ionicons name="alert-circle-outline" size={44} color="#D95445" />
+          <Text
+            style={{ color: colors.text }}
+            className="mt-3 text-base font-bold text-center"
+          >
+            {errorMsg}
+          </Text>
+          <Pressable
+            onPress={onRefresh}
+            style={{ backgroundColor: colors.primary }}
+            className="mt-4 rounded-xl px-5 py-2.5"
+          >
+            <Text className="text-white font-bold text-xs">Retry</Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList
@@ -243,7 +395,11 @@ export default function NotificationsScreen() {
                 style={{ backgroundColor: colors.chip }}
                 className="h-16 w-16 items-center justify-center rounded-2xl"
               >
-                <Ionicons name="notifications-outline" size={32} color={colors.primary} />
+                <Ionicons
+                  name="notifications-outline"
+                  size={32}
+                  color={colors.primary}
+                />
               </View>
 
               <Text
@@ -257,7 +413,7 @@ export default function NotificationsScreen() {
                 style={{ color: colors.muted }}
                 className="mt-1 text-center text-xs leading-relaxed"
               >
-                Booking updates, reminders, and recommendations will appear here.
+                Booking updates, confirmations, table passes, and owner messages will appear here in real time.
               </Text>
             </View>
           }

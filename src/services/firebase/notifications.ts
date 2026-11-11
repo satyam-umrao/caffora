@@ -1,8 +1,10 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDocs,
   limit,
+  onSnapshot,
   query,
   serverTimestamp,
   setDoc,
@@ -62,6 +64,81 @@ export async function getUserNotifications(
 }
 
 /**
+ * Real-time listener for user notifications.
+ */
+export function subscribeToUserNotifications(
+  userId: string,
+  onUpdate: (notifications: AppNotification[]) => void,
+  onError?: (error: any) => void,
+): () => void {
+  if (!userId) {
+    onUpdate([]);
+    return () => {};
+  }
+
+  const notifsRef = collection(db, "notifications");
+  const q = query(notifsRef, where("userId", "==", userId), limit(50));
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      const notifications = snapshot.docs.map((docSnap) =>
+        mapNotification(docSnap.id, docSnap.data()),
+      );
+
+      // Sort newest first
+      notifications.sort((a, b) => {
+        const timeA = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : 0;
+        const timeB = b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0;
+        return timeB - timeA;
+      });
+
+      onUpdate(notifications);
+    },
+    (error) => {
+      console.warn("subscribeToUserNotifications error:", error?.message || error);
+      if (onError) onError(error);
+    },
+  );
+
+  return unsubscribe;
+}
+
+/**
+ * Real-time listener for unread notification count.
+ * Returns an unsubscribe callback.
+ */
+export function subscribeToUnreadNotificationCount(
+  userId: string,
+  onUpdate: (count: number) => void,
+): () => void {
+  if (!userId) {
+    onUpdate(0);
+    return () => {};
+  }
+
+  const notifsRef = collection(db, "notifications");
+  const q = query(
+    notifsRef,
+    where("userId", "==", userId),
+    where("read", "==", false),
+  );
+
+  const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+      onUpdate(snapshot.size);
+    },
+    (error) => {
+      console.warn("subscribeToUnreadNotificationCount error:", error?.message || error);
+      onUpdate(0);
+    },
+  );
+
+  return unsubscribe;
+}
+
+/**
  * Mark a single notification as read.
  */
 export async function markNotificationAsRead(
@@ -107,26 +184,74 @@ export async function markAllNotificationsAsRead(
 }
 
 /**
+ * Delete a single notification by ID.
+ */
+export async function deleteNotification(
+  userId: string,
+  notificationId: string,
+): Promise<void> {
+  try {
+    if (!notificationId) return;
+    const notifRef = doc(db, "notifications", notificationId);
+    await deleteDoc(notifRef);
+  } catch (error) {
+    console.warn("deleteNotification warning:", error);
+    throw error;
+  }
+}
+
+/**
+ * Clear all notifications for a user.
+ */
+export async function clearAllNotifications(userId: string): Promise<void> {
+  try {
+    if (!userId) return;
+    const notifsRef = collection(db, "notifications");
+    const q = query(notifsRef, where("userId", "==", userId));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) return;
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.warn("clearAllNotifications warning:", error);
+    throw error;
+  }
+}
+
+/**
  * Helper to dispatch an in-app notification to a user.
+ * Supports optional idempotent custom notificationId (e.g. `booking_${id}_${status}`).
  */
 export async function createNotification(
   userId: string,
   notification: Omit<AppNotification, "id" | "userId" | "read" | "createdAt">,
-): Promise<void> {
+  customNotificationId?: string,
+): Promise<string> {
   try {
-    if (!userId) return;
+    if (!userId) return "";
 
     const notifsRef = collection(db, "notifications");
-    const newDocRef = doc(notifsRef);
+    const targetRef = customNotificationId
+      ? doc(db, "notifications", customNotificationId)
+      : doc(notifsRef);
 
-    await setDoc(newDocRef, {
+    await setDoc(targetRef, {
       ...notification,
       userId,
       read: false,
       createdAt: serverTimestamp(),
     });
+
+    return targetRef.id;
   } catch (error) {
     console.warn("createNotification warning:", error);
+    return "";
   }
 }
 

@@ -12,8 +12,11 @@ service firebase.storage {
     }
     
     function isValidImage() {
-      return request.resource.contentType.matches('image/.*')
-        && request.resource.size < 10 * 1024 * 1024; // max 10MB
+      return request.resource == null || 
+        (request.resource.size < 15 * 1024 * 1024 &&
+         (request.resource.contentType == null || 
+          request.resource.contentType.matches('image/.*') || 
+          request.resource.contentType == 'application/octet-stream'));
     }
 
     // Cafe Photos: cafes/{ownerId}/{fileName}

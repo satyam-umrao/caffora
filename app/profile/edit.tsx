@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,19 +15,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import { auth } from "../../src/services/firebase/config";
 import {
   getUserProfile,
   updateUserProfile,
 } from "../../src/services/firebase/users";
-import { useTheme } from "../../src/context/ThemeContext";
 
 const AVATAR_PRESETS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRHcv98VeXj-6bUz4lgXW7eSKDfdrZjlcgmj4Hb9COBtA&s=10",
+  "https://latestpfp.com/wp-content/uploads/2026/10/cartoon-boy-heart-pfp-sweater-patch.webp",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQKNqaGSqUcqzv3YTREJy6AmFEVqp0ulvOzq2zacDP8NA&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS2O2ndqEbsll4DGQdD4BgLrNnOKpjD3JpOHXKRL4wB-w&s=10",
+  "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTiaK61I3GqHNoOYp1lhOcPlxL-9wWyTVykGQHSTIJ-nQ&s=10  ",
 ];
 
 export default function EditProfileScreen() {

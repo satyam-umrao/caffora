@@ -12,6 +12,7 @@ import {
 
 import { auth } from "../src/services/firebase/config";
 import { getUserProfile } from "../src/services/firebase/users";
+import { registerForPushNotificationsAsync } from "../src/services/notifications/pushNotifications";
 
 const SPLASH_IMAGE =
   "https://plus.unsplash.com/premium_photo-1673545518947-ddf3240090b1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Y2FmZXxlbnwwfHwwfHx8MA%3D%3D";
@@ -44,6 +45,9 @@ export default function Index() {
       timer = setTimeout(async () => {
         if (user) {
           if (user.emailVerified) {
+            // Trigger push token registration in background
+            registerForPushNotificationsAsync(user.uid).catch(() => {});
+
             try {
               const profile = await getUserProfile(user.uid);
               if (profile?.role === "cafe_owner") {
