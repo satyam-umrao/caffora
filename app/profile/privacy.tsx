@@ -12,9 +12,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { auth } from "../../src/services/firebase/config";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function PrivacyScreen() {
-  const currentUser = auth.currentUser;
+  const { colors, isDark } = useTheme();
 
   const [publicReviews, setPublicReviews] = useState(true);
   const [personalizedRecs, setPersonalizedRecs] = useState(true);
@@ -41,17 +42,31 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{ backgroundColor: colors.cardAlt }}
+          className="h-10 w-10 items-center justify-center rounded-full"
         >
-          <Ionicons name="chevron-back" size={22} color="#241C18" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text className="text-base font-extrabold text-[#241C18]">
+        <Text
+          style={{ color: colors.text }}
+          className="text-base font-extrabold"
+        >
           Privacy & Security
         </Text>
 
@@ -64,58 +79,91 @@ export default function PrivacyScreen() {
       >
         {/* Privacy Controls */}
         <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider"
+          >
             Visibility & Preferences
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="rounded-2xl border overflow-hidden"
+          >
             <View className="flex-row items-center justify-between p-4">
               <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-bold"
+                >
                   Public Café Reviews
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text style={{ color: colors.muted }} className="text-xs">
                   Allow other Caffora members to read your posted reviews
                 </Text>
               </View>
               <Switch
                 value={publicReviews}
                 onValueChange={setPublicReviews}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{
+                  false: isDark ? "#3A3430" : "#E0D7D0",
+                  true: colors.primary,
+                }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View className="flex-row items-center justify-between p-4">
+            <View
+              style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+              className="flex-row items-center justify-between p-4"
+            >
               <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-bold"
+                >
                   Personalized Recommendations
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text style={{ color: colors.muted }} className="text-xs">
                   Tailor featured cafés to your taste and booking history
                 </Text>
               </View>
               <Switch
                 value={personalizedRecs}
                 onValueChange={setPersonalizedRecs}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{
+                  false: isDark ? "#3A3430" : "#E0D7D0",
+                  true: colors.primary,
+                }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View className="flex-row items-center justify-between p-4">
+            <View
+              style={{ borderTopWidth: 1, borderTopColor: colors.border }}
+              className="flex-row items-center justify-between p-4"
+            >
               <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-bold"
+                >
                   Anonymous Diagnostic Data
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text style={{ color: colors.muted }} className="text-xs">
                   Help us improve app stability and fix performance bugs
                 </Text>
               </View>
               <Switch
                 value={crashReports}
                 onValueChange={setCrashReports}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{
+                  false: isDark ? "#3A3430" : "#E0D7D0",
+                  true: colors.primary,
+                }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -124,31 +172,55 @@ export default function PrivacyScreen() {
 
         {/* Data Security Info */}
         <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider"
+          >
             How We Protect Your Data
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white p-5 gap-4">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="rounded-2xl border p-5 gap-4"
+          >
             <View className="flex-row items-start">
-              <Ionicons name="lock-closed" size={20} color="#B95E2E" />
+              <Ionicons name="lock-closed" size={20} color={colors.primary} />
               <View className="ml-3 flex-1">
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-bold"
+                >
                   Encrypted Authentication
                 </Text>
-                <Text className="mt-0.5 text-xs text-[#786B63]">
+                <Text
+                  style={{ color: colors.textSecondary }}
+                  className="mt-0.5 text-xs"
+                >
                   All user credentials and sessions are secured using Firebase
                   Authentication industry-standard protocols.
                 </Text>
               </View>
             </View>
 
-            <View className="flex-row items-start border-t border-[#F2ECE7] pt-4">
-              <Ionicons name="shield-checkmark" size={20} color="#B95E2E" />
+            <View
+              style={{ borderTopColor: colors.border }}
+              className="flex-row items-start border-t pt-4"
+            >
+              <Ionicons name="shield-checkmark" size={20} color={colors.primary} />
               <View className="ml-3 flex-1">
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-sm font-bold"
+                >
                   Strict Data Isolation
                 </Text>
-                <Text className="mt-0.5 text-xs text-[#786B63]">
+                <Text
+                  style={{ color: colors.textSecondary }}
+                  className="mt-0.5 text-xs"
+                >
                   Your private bookings, notifications, and personal data are only
                   accessible by you.
                 </Text>
@@ -161,7 +233,11 @@ export default function PrivacyScreen() {
         <View className="mt-8 gap-3">
           <Pressable
             onPress={handleDeleteAccountRequest}
-            className="h-14 items-center justify-center rounded-2xl border border-[#F6D7D5] bg-[#FFF8F7]"
+            style={{
+              backgroundColor: isDark ? "#381816" : "#FFF8F7",
+              borderColor: isDark ? "#5C2622" : "#F6D7D5",
+            }}
+            className="h-14 items-center justify-center rounded-2xl border"
           >
             <Text className="text-sm font-bold text-[#D95445]">
               Request Account Deletion

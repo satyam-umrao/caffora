@@ -8,8 +8,10 @@ import {
     type User,
     type UserCredential,
 } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 
-import { auth } from "./config";
+import { auth, db } from "./config";
+import { DEFAULT_PREFERENCES } from "./users";
 
 export async function signUp(
   name: string,
@@ -25,6 +27,62 @@ export async function signUp(
   await updateProfile(credential.user, {
     displayName: name.trim(),
   });
+
+  // Persist user profile with customer role
+  const userRef = doc(db, "users", credential.user.uid);
+  await setDoc(
+    userRef,
+    {
+      uid: credential.user.uid,
+      displayName: name.trim(),
+      email: email.trim().toLowerCase(),
+      role: "customer",
+      preferences: DEFAULT_PREFERENCES,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
+
+  await sendEmailVerification(credential.user);
+
+  return credential;
+}
+
+export async function signUpOwner(
+  name: string,
+  businessName: string,
+  email: string,
+  phone: string,
+  password: string,
+): Promise<UserCredential> {
+  const credential = await createUserWithEmailAndPassword(
+    auth,
+    email.trim().toLowerCase(),
+    password,
+  );
+
+  await updateProfile(credential.user, {
+    displayName: name.trim(),
+  });
+
+  // Persist user profile with cafe_owner role
+  const userRef = doc(db, "users", credential.user.uid);
+  await setDoc(
+    userRef,
+    {
+      uid: credential.user.uid,
+      displayName: name.trim(),
+      businessName: businessName.trim(),
+      email: email.trim().toLowerCase(),
+      phoneNumber: phone.trim(),
+      role: "cafe_owner",
+      preferences: DEFAULT_PREFERENCES,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true },
+  );
 
   await sendEmailVerification(credential.user);
 

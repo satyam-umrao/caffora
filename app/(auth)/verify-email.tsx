@@ -13,10 +13,10 @@ import {
   checkEmailVerification,
   resendVerificationEmail,
 } from "../../src/services/firebase/auth";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function VerifyEmailScreen() {
-
-
+  const { colors } = useTheme();
 
   const params = useLocalSearchParams<{
     email?: string;
@@ -29,11 +29,12 @@ export default function VerifyEmailScreen() {
   const [message, setMessage] = useState("A verification link has been sent to your email.");
   const [error, setError] = useState("");
 
-  const bg = "#FAF8F5";
-  const text = "#1D1815";
-  const secondary = "#776B64";
-  const card = "#FFFFFF";
-  const border = "#E5DFDA";
+  const bg = colors.background;
+  const text = colors.text;
+  const secondary = colors.muted;
+  const primary = colors.primary;
+  const card = colors.surface;
+  const border = colors.border;
 
 
 
@@ -87,7 +88,7 @@ export default function VerifyEmailScreen() {
           style={[
             styles.iconCircle,
             {
-              backgroundColor: "#F2E5DC",
+              backgroundColor: colors.chip,
             },
           ]}
         >
@@ -138,7 +139,7 @@ export default function VerifyEmailScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Pressable
-          style={styles.primaryButton}
+          style={[styles.primaryButton, { backgroundColor: primary }]}
           onPress={checkVerification}
           disabled={checking}
         >
@@ -150,14 +151,14 @@ export default function VerifyEmailScreen() {
         </Pressable>
 
         <Pressable
-          style={styles.secondaryButton}
+          style={[styles.secondaryButton, { borderColor: primary }]}
           onPress={resend}
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#B95E2E" />
+            <ActivityIndicator color={primary} />
           ) : (
-            <Text style={styles.secondaryText}>Resend Verification Email</Text>
+            <Text style={[styles.secondaryText, { color: primary }]}>Resend Verification Email</Text>
           )}
         </Pressable>
       </View>

@@ -19,6 +19,7 @@ import {
   addReview,
   getUserReviewForCafe,
 } from "../../src/services/firebase/reviews";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const RATING_LABELS: Record<number, string> = {
   1: "Poor experience 😞",
@@ -29,6 +30,7 @@ const RATING_LABELS: Record<number, string> = {
 };
 
 export default function WriteReviewModal() {
+  const { colors, isDark } = useTheme();
   const { cafeId, cafeName } = useLocalSearchParams<{
     cafeId: string;
     cafeName?: string;
@@ -105,7 +107,7 @@ export default function WriteReviewModal() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#FAF7F3" }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -120,23 +122,41 @@ export default function WriteReviewModal() {
         {/* Modal Header */}
         <View className="flex-row items-center justify-between pb-4">
           <View>
-            <Text className="text-xl font-black text-[#241C18]">
+            <Text
+              style={{ color: colors.text }}
+              className="text-xl font-black"
+            >
               Write a Review
             </Text>
-            <Text className="text-xs text-[#8A7D75]">{targetCafeName}</Text>
+            <Text style={{ color: colors.muted }} className="text-xs">
+              {targetCafeName}
+            </Text>
           </View>
 
           <Pressable
             onPress={() => router.back()}
-            className="h-9 w-9 items-center justify-center rounded-full bg-white border border-[#EEE5DE]"
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="h-9 w-9 items-center justify-center rounded-full border"
           >
-            <Ionicons name="close" size={20} color="#241C18" />
+            <Ionicons name="close" size={20} color={colors.text} />
           </Pressable>
         </View>
 
         {/* Rating Stars Card */}
-        <View className="mt-3 items-center rounded-2xl border border-[#EEE5DE] bg-white p-6">
-          <Text className="text-xs font-extrabold uppercase tracking-wider text-[#93867E]">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
+          className="mt-3 items-center rounded-2xl border p-6"
+        >
+          <Text
+            style={{ color: colors.muted }}
+            className="text-xs font-extrabold uppercase tracking-wider"
+          >
             Tap to Rate
           </Text>
 
@@ -152,24 +172,36 @@ export default function WriteReviewModal() {
                 <Ionicons
                   name={star <= rating ? "star" : "star-outline"}
                   size={36}
-                  color={star <= rating ? "#F6B94A" : "#D0C4BC"}
+                  color={star <= rating ? "#F6B94A" : isDark ? "#4B423C" : "#D0C4BC"}
                 />
               </Pressable>
             ))}
           </View>
 
-          <Text className="text-xs font-bold text-[#B95E2E]">
+          <Text
+            style={{ color: colors.primary }}
+            className="text-xs font-bold"
+          >
             {RATING_LABELS[rating] || "Select your rating"}
           </Text>
         </View>
 
         {/* Comment Box */}
         <View className="mt-5">
-          <Text className="mb-2 text-xs font-bold text-[#302720]">
+          <Text
+            style={{ color: colors.text }}
+            className="mb-2 text-xs font-bold"
+          >
             Your Experience
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white p-3.5">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="rounded-2xl border p-3.5"
+          >
             <TextInput
               value={comment}
               onChangeText={(text) => {
@@ -177,19 +209,29 @@ export default function WriteReviewModal() {
                 if (error) setError("");
               }}
               placeholder="What made your visit special? Mention coffee quality, seating, vibe, food, or service..."
-              placeholderTextColor="#9E928A"
+              placeholderTextColor={colors.muted}
               multiline
               numberOfLines={6}
               textAlignVertical="top"
               maxLength={500}
-              className="h-36 text-sm text-[#241C18] leading-relaxed"
+              style={{ color: colors.text }}
+              className="h-36 text-sm leading-relaxed"
             />
 
-            <View className="flex-row justify-between items-center border-t border-[#F2ECE7] pt-2">
-              <Text className="text-[10px] text-[#93867E]">
+            <View
+              style={{ borderTopColor: colors.border }}
+              className="flex-row justify-between items-center border-t pt-2"
+            >
+              <Text
+                style={{ color: colors.muted }}
+                className="text-[10px]"
+              >
                 Help other coffee lovers
               </Text>
-              <Text className="text-[10px] font-bold text-[#93867E]">
+              <Text
+                style={{ color: colors.muted }}
+                className="text-[10px] font-bold"
+              >
                 {comment.length}/500
               </Text>
             </View>
@@ -198,7 +240,13 @@ export default function WriteReviewModal() {
 
         {/* Error */}
         {error ? (
-          <View className="mt-3 rounded-xl bg-[#FDEAE8] p-3 border border-[#F8C8C4]">
+          <View
+            style={{
+              backgroundColor: isDark ? "#381816" : "#FDEAE8",
+              borderColor: isDark ? "#5C2622" : "#F8C8C4",
+            }}
+            className="mt-3 rounded-xl p-3 border"
+          >
             <Text className="text-xs font-bold text-[#D95445] text-center">
               {error}
             </Text>
@@ -209,7 +257,8 @@ export default function WriteReviewModal() {
         <Pressable
           onPress={handleSubmit}
           disabled={submitting}
-          className={`mt-6 h-14 items-center justify-center rounded-2xl bg-[#B95E2E] ${
+          style={{ backgroundColor: colors.primary }}
+          className={`mt-6 h-14 items-center justify-center rounded-2xl ${
             submitting ? "opacity-70" : ""
           }`}
         >

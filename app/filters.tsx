@@ -11,17 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-const COLORS = {
-  background: "#FAF7F3",
-  surface: "#FFFFFF",
-  text: "#241C18",
-  muted: "#8A7D75",
-  border: "#EEE5DE",
-  primary: "#B95E2E",
-  primaryDark: "#9E4D24",
-  chip: "#FAF3EE",
-};
+import { useTheme, ThemeColors } from "../src/context/ThemeContext";
 
 const CATEGORIES = [
   "Specialty Coffee",
@@ -63,6 +53,9 @@ const AMENITIES = [
 ];
 
 export default function FiltersScreen() {
+  const { colors, isDark } = useTheme();
+  const styles = useMemo(() => getStyles(colors, isDark), [colors, isDark]);
+
   const params = useLocalSearchParams<{
     minPrice?: string;
     maxPrice?: string;
@@ -182,7 +175,7 @@ export default function FiltersScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} style={styles.headerButton}>
-          <Ionicons name="close" size={24} color={COLORS.text} />
+          <Ionicons name="close" size={24} color={colors.text} />
         </Pressable>
 
         <View style={styles.headerTitleContainer}>
@@ -220,9 +213,9 @@ export default function FiltersScreen() {
             maximumValue={3000}
             step={100}
             value={minPrice}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.border}
-            thumbTintColor={COLORS.primary}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
             onValueChange={(value) => {
               const next = Math.round(value);
               if (next <= maxPrice) {
@@ -239,9 +232,9 @@ export default function FiltersScreen() {
             maximumValue={3000}
             step={100}
             value={maxPrice}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.border}
-            thumbTintColor={COLORS.primary}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
             onValueChange={(value) => {
               const next = Math.round(value);
               if (next >= minPrice) {
@@ -316,9 +309,9 @@ export default function FiltersScreen() {
             maximumValue={50}
             step={1}
             value={distance}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.border}
-            thumbTintColor={COLORS.primary}
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.border}
+            thumbTintColor={colors.primary}
             onValueChange={(value) => setDistance(Math.round(value))}
           />
 
@@ -339,8 +332,8 @@ export default function FiltersScreen() {
             value={openNow}
             onValueChange={setOpenNow}
             trackColor={{
-              false: "#E0D7D0",
-              true: COLORS.primary,
+              false: isDark ? "#3A3430" : "#E0D7D0",
+              true: colors.primary,
             }}
             thumbColor="#FFFFFF"
           />
@@ -398,227 +391,228 @@ export default function FiltersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    height: 64,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-  },
-  headerButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FAF7F3",
-  },
-  headerTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: COLORS.text,
-  },
-  countBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 6,
-  },
-  countText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  resetText: {
-    color: COLORS.primary,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 130,
-  },
-  section: {
-    marginBottom: 26,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: "800",
-    marginBottom: 12,
-  },
-  priceTag: {
-    backgroundColor: "#FAF3EE",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#F2D7CA",
-  },
-  valueText: {
-    color: COLORS.primary,
-    fontSize: 13,
-    fontWeight: "800",
-  },
-  sliderSubLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: COLORS.muted,
-    marginBottom: 2,
-  },
-  rangeLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 4,
-  },
-  rangeLabel: {
-    color: COLORS.muted,
-    fontSize: 11,
-    fontWeight: "500",
-  },
-  ratingContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  ratingButton: {
-    height: 40,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.surface,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 5,
-  },
-  ratingButtonSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  ratingText: {
-    color: COLORS.text,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  ratingTextSelected: {
-    color: "#FFFFFF",
-  },
-  switchRow: {
-    backgroundColor: COLORS.surface,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 26,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  switchTitle: {
-    color: COLORS.text,
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  switchSubtitle: {
-    color: COLORS.muted,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  chipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  chip: {
-    minHeight: 38,
-    paddingHorizontal: 14,
-    borderRadius: 19,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  chipSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  chipText: {
-    color: COLORS.text,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  chipTextSelected: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-  },
-  bottomBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-    backgroundColor: COLORS.surface,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  applyButton: {
-    height: 52,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-  applyButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  applyBadge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 6,
-  },
-  applyBadgeText: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-});
+const getStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      height: 64,
+      paddingHorizontal: 20,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    headerButton: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.cardAlt,
+    },
+    headerTitleContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    countBadge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 6,
+    },
+    countText: {
+      color: "#FFFFFF",
+      fontSize: 11,
+      fontWeight: "800",
+    },
+    resetText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    content: {
+      padding: 20,
+      paddingBottom: 130,
+    },
+    section: {
+      marginBottom: 26,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      color: colors.text,
+      fontSize: 16,
+      fontWeight: "800",
+      marginBottom: 12,
+    },
+    priceTag: {
+      backgroundColor: colors.chip,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    valueText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "800",
+    },
+    sliderSubLabel: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.muted,
+      marginBottom: 2,
+    },
+    rangeLabels: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 4,
+    },
+    rangeLabel: {
+      color: colors.muted,
+      fontSize: 11,
+      fontWeight: "500",
+    },
+    ratingContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    ratingButton: {
+      height: 40,
+      paddingHorizontal: 14,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.surface,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+    },
+    ratingButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    ratingText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: "700",
+    },
+    ratingTextSelected: {
+      color: "#FFFFFF",
+    },
+    switchRow: {
+      backgroundColor: colors.surface,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 26,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    switchTitle: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    switchSubtitle: {
+      color: colors.muted,
+      fontSize: 12,
+      marginTop: 2,
+    },
+    chipContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    chip: {
+      minHeight: 38,
+      paddingHorizontal: 14,
+      borderRadius: 19,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    chipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    chipText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: "600",
+    },
+    chipTextSelected: {
+      color: "#FFFFFF",
+      fontWeight: "700",
+    },
+    bottomBar: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      paddingHorizontal: 20,
+      paddingTop: 12,
+      paddingBottom: 24,
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      shadowColor: "#000",
+      shadowOpacity: isDark ? 0.3 : 0.05,
+      shadowRadius: 10,
+      elevation: 8,
+    },
+    applyButton: {
+      height: 52,
+      borderRadius: 18,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      gap: 10,
+    },
+    applyButtonText: {
+      color: "#FFFFFF",
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    applyBadge: {
+      minWidth: 22,
+      height: 22,
+      borderRadius: 11,
+      backgroundColor: "#FFFFFF",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 6,
+    },
+    applyBadgeText: {
+      color: colors.primary,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+  });

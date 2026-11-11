@@ -78,3 +78,35 @@ export async function uploadReviewImage(
     throw error;
   }
 }
+
+/**
+ * Upload a cafe image to Firebase Storage.
+ * Path: cafes/{ownerId}/{timestamp}_{index}.jpg
+ */
+export async function uploadCafeImage(
+  ownerId: string,
+  localUri: string,
+  index: number = 0,
+): Promise<string> {
+  try {
+    if (!ownerId || !localUri) {
+      throw new Error("Missing ownerId or image URI");
+    }
+
+    const blob = await uriToBlob(localUri);
+    const filename = `cafe_${Date.now()}_${index}.jpg`;
+    const storageRef = ref(storage, `cafes/${ownerId}/${filename}`);
+
+    const snapshot = await uploadBytes(storageRef, blob);
+    const downloadUrl = await getDownloadURL(snapshot.ref);
+
+    if ("close" in blob && typeof (blob as any).close === "function") {
+      (blob as any).close();
+    }
+
+    return downloadUrl;
+  } catch (error) {
+    console.error("uploadCafeImage error:", error);
+    throw error;
+  }
+}

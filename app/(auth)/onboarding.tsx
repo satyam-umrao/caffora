@@ -10,9 +10,9 @@ import {
   Pressable,
   StyleSheet,
   Text,
-
   View,
 } from "react-native";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -45,16 +45,14 @@ const slides = [
 ];
 
 export default function OnboardingScreen() {
-
-
-
+  const { colors, isDark } = useTheme();
   const [index, setIndex] = useState(0);
 
   const listRef = useRef<FlatList>(null);
 
-  const background = "#FAF8F5";
-  const text = "#1E1916";
-  const secondary = "#756960";
+  const background = colors.background;
+  const text = colors.text;
+  const secondary = colors.muted;
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_KEY, "true");
@@ -125,7 +123,7 @@ export default function OnboardingScreen() {
                 i === index
                   ? styles.activeDot
                   : {
-                      backgroundColor: "#DDD7D1",
+                      backgroundColor: isDark ? "#4B423C" : "#DDD7D1",
                     },
               ]}
             />

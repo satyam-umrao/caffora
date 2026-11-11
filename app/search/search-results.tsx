@@ -16,8 +16,10 @@ import {
   getSavedCafeIds,
   toggleCafeSaved,
 } from "../../src/services/firebase/favorites";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function SearchResultsScreen() {
+  const { colors, isDark } = useTheme();
   const { query } = useLocalSearchParams<{ query?: string }>();
 
   const [cafes, setCafes] = useState<Cafe[]>([]);
@@ -84,10 +86,17 @@ export default function SearchResultsScreen() {
     return (
       <Pressable
         onPress={() => openCafe(item.id)}
-        className="mb-4 overflow-hidden rounded-2xl border border-[#E8E1DB] bg-white"
+        style={{
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+        }}
+        className="mb-4 overflow-hidden rounded-2xl border"
       >
         {/* Cafe Image */}
-        <View className="relative h-[190px] w-full bg-[#EADFD7]">
+        <View
+          style={{ backgroundColor: colors.cardAlt }}
+          className="relative h-[190px] w-full"
+        >
           <Image
             source={{
               uri:
@@ -100,15 +109,24 @@ export default function SearchResultsScreen() {
 
           {/* Featured */}
           {item.featured && (
-            <View className="absolute left-3 top-3 rounded-full bg-[#B95E2E] px-3 py-1">
+            <View
+              style={{ backgroundColor: colors.primary }}
+              className="absolute left-3 top-3 rounded-full px-3 py-1"
+            >
               <Text className="text-[11px] font-bold text-white">Featured</Text>
             </View>
           )}
 
           {/* Rating */}
-          <View className="absolute right-3 top-3 flex-row items-center rounded-full bg-white/95 px-2.5 py-1.5 shadow-sm">
+          <View
+            style={{ backgroundColor: isDark ? "rgba(33, 27, 24, 0.9)" : "rgba(255, 255, 255, 0.95)" }}
+            className="absolute right-3 top-3 flex-row items-center rounded-full px-2.5 py-1.5 shadow-sm"
+          >
             <Ionicons name="star" size={14} color="#F6B94A" />
-            <Text className="ml-1 text-[12px] font-extrabold text-[#302720]">
+            <Text
+              style={{ color: colors.text }}
+              className="ml-1 text-[12px] font-extrabold"
+            >
               {item.rating.toFixed(1)}
             </Text>
           </View>
@@ -119,14 +137,16 @@ export default function SearchResultsScreen() {
           <View className="flex-row items-start justify-between">
             <View className="flex-1 pr-3">
               <Text
-                className="text-[17px] font-extrabold text-[#241C18]"
+                style={{ color: colors.text }}
+                className="text-[17px] font-extrabold"
                 numberOfLines={1}
               >
                 {item.name}
               </Text>
 
               <Text
-                className="mt-1 text-[13px] font-medium text-[#81746C]"
+                style={{ color: colors.muted }}
+                className="mt-1 text-[13px] font-medium"
                 numberOfLines={1}
               >
                 {item.category} • {item.priceRange}
@@ -135,21 +155,23 @@ export default function SearchResultsScreen() {
 
             <Pressable
               onPress={() => handleToggleSave(item.id)}
-              className="h-9 w-9 items-center justify-center rounded-full bg-[#FAF4F0]"
+              style={{ backgroundColor: colors.chip }}
+              className="h-9 w-9 items-center justify-center rounded-full"
             >
               <Ionicons
                 name={isSaved ? "heart" : "heart-outline"}
                 size={19}
-                color={isSaved ? "#E0524D" : "#B95E2E"}
+                color={isSaved ? "#E0524D" : colors.primary}
               />
             </Pressable>
           </View>
 
           {/* Location */}
           <View className="mt-3 flex-row items-center">
-            <Ionicons name="location-outline" size={16} color="#8A7D75" />
+            <Ionicons name="location-outline" size={16} color={colors.muted} />
             <Text
-              className="ml-1.5 flex-1 text-[13px] text-[#81746C]"
+              style={{ color: colors.textSecondary }}
+              className="ml-1.5 flex-1 text-[13px]"
               numberOfLines={1}
             >
               {item.location}, {item.city}
@@ -161,9 +183,12 @@ export default function SearchResultsScreen() {
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={15}
-              color="#8A7D75"
+              color={colors.muted}
             />
-            <Text className="ml-1.5 text-[12px] text-[#93867E]">
+            <Text
+              style={{ color: colors.muted }}
+              className="ml-1.5 text-[12px]"
+            >
               {item.reviewCount} reviews
             </Text>
           </View>
@@ -173,23 +198,38 @@ export default function SearchResultsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center px-5 pb-4 pt-3 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row items-center px-5 pb-4 pt-3 border-b"
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{ backgroundColor: colors.cardAlt }}
+          className="h-10 w-10 items-center justify-center rounded-full"
         >
-          <Ionicons name="arrow-back" size={22} color="#302720" />
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </Pressable>
 
         <View className="ml-3 flex-1">
-          <Text className="text-[12px] font-medium text-[#93867E]">
+          <Text
+            style={{ color: colors.muted }}
+            className="text-[12px] font-medium"
+          >
             Search results
           </Text>
 
           <Text
-            className="mt-0.5 text-[18px] font-extrabold text-[#241C18]"
+            style={{ color: colors.text }}
+            className="mt-0.5 text-[18px] font-extrabold"
             numberOfLines={1}
           >
             {searchQuery || "All cafés"}
@@ -200,29 +240,44 @@ export default function SearchResultsScreen() {
       {/* Loading */}
       {loading && (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#B95E2E" />
-          <Text className="mt-3 text-sm text-[#81746C]">Finding cafés...</Text>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text
+            style={{ color: colors.muted }}
+            className="mt-3 text-sm"
+          >
+            Finding cafés...
+          </Text>
         </View>
       )}
 
       {/* Error */}
       {!loading && error !== "" && (
         <View className="flex-1 items-center justify-center px-8">
-          <View className="h-16 w-16 items-center justify-center rounded-full bg-[#F9E8DE]">
-            <Ionicons name="cloud-offline-outline" size={28} color="#B95E2E" />
+          <View
+            style={{ backgroundColor: colors.chip }}
+            className="h-16 w-16 items-center justify-center rounded-full"
+          >
+            <Ionicons name="cloud-offline-outline" size={28} color={colors.primary} />
           </View>
 
-          <Text className="mt-4 text-center text-[17px] font-bold text-[#302720]">
+          <Text
+            style={{ color: colors.text }}
+            className="mt-4 text-center text-[17px] font-bold"
+          >
             Something went wrong
           </Text>
 
-          <Text className="mt-2 text-center text-sm text-[#81746C]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mt-2 text-center text-sm"
+          >
             {error}
           </Text>
 
           <Pressable
             onPress={runSearch}
-            className="mt-5 rounded-xl bg-[#B95E2E] px-6 py-3"
+            style={{ backgroundColor: colors.primary }}
+            className="mt-5 rounded-xl px-6 py-3"
           >
             <Text className="font-bold text-white">Try again</Text>
           </Pressable>
@@ -244,7 +299,10 @@ export default function SearchResultsScreen() {
           ListHeaderComponent={
             cafes.length > 0 ? (
               <View className="mb-4">
-                <Text className="text-[13px] font-semibold text-[#93867E]">
+                <Text
+                  style={{ color: colors.muted }}
+                  className="text-[13px] font-semibold"
+                >
                   {cafes.length} {cafes.length === 1 ? "café" : "cafés"} found
                 </Text>
               </View>
@@ -252,22 +310,32 @@ export default function SearchResultsScreen() {
           }
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center px-5 pt-24">
-              <View className="h-20 w-20 items-center justify-center rounded-full bg-[#F9E8DE]">
-                <Ionicons name="search-outline" size={34} color="#B95E2E" />
+              <View
+                style={{ backgroundColor: colors.chip }}
+                className="h-20 w-20 items-center justify-center rounded-full"
+              >
+                <Ionicons name="search-outline" size={34} color={colors.primary} />
               </View>
 
-              <Text className="mt-5 text-center text-[20px] font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mt-5 text-center text-[20px] font-bold"
+              >
                 No cafés found
               </Text>
 
-              <Text className="mt-2 text-center text-sm leading-5 text-[#81746C]">
+              <Text
+                style={{ color: colors.muted }}
+                className="mt-2 text-center text-sm leading-5"
+              >
                 {"We couldn't find any cafés matching "}
-                <Text className="font-semibold">{`"${searchQuery}"`}</Text>.
+                <Text style={{ color: colors.text }} className="font-semibold">{`"${searchQuery}"`}</Text>.
               </Text>
 
               <Pressable
                 onPress={() => router.back()}
-                className="mt-6 rounded-xl bg-[#B95E2E] px-6 py-3"
+                style={{ backgroundColor: colors.primary }}
+                className="mt-6 rounded-xl px-6 py-3"
               >
                 <Text className="font-bold text-white">Try another search</Text>
               </Pressable>

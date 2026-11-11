@@ -22,6 +22,7 @@ import { openDirections } from "../../src/services/deepLinks/directions";
 import { makePhoneCall } from "../../src/services/deepLinks/phone";
 import { openWebsite } from "../../src/services/deepLinks/website";
 import { openWhatsApp } from "../../src/services/deepLinks/whatsapp";
+import { useTheme } from "../../src/context/ThemeContext";
 import { Cafe, getCafeById } from "../../src/services/firebase/cafes";
 import {
   isCafeSaved,
@@ -42,6 +43,7 @@ const DAYS = [
 ] as const;
 
 export default function CafeDetailScreen() {
+  const { colors, isDark } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const insets = useSafeAreaInsets();
 
@@ -152,9 +154,23 @@ export default function CafeDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#FAF7F3]">
-        <ActivityIndicator size="large" color="#B95E2E" />
-        <Text className="mt-3 text-sm font-semibold text-[#8A7D75]">
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text
+          style={{
+            marginTop: 12,
+            fontSize: 14,
+            fontWeight: "600",
+            color: colors.textSecondary,
+          }}
+        >
           Loading café details...
         </Text>
       </View>
@@ -163,21 +179,59 @@ export default function CafeDetailScreen() {
 
   if (error || !cafe) {
     return (
-      <View className="flex-1 items-center justify-center bg-[#FAF7F3] px-6">
-        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-[#F9E8DE]">
-          <Ionicons name="cafe-outline" size={32} color="#B95E2E" />
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: colors.background,
+          paddingHorizontal: 24,
+        }}
+      >
+        <View
+          style={{
+            height: 64,
+            width: 64,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 16,
+            backgroundColor: colors.primarySoft,
+          }}
+        >
+          <Ionicons name="cafe-outline" size={32} color={colors.primary} />
         </View>
-        <Text className="mt-4 text-center text-lg font-bold text-[#241C18]">
+        <Text
+          style={{
+            marginTop: 16,
+            textAlign: "center",
+            fontSize: 18,
+            fontWeight: "700",
+            color: colors.text,
+          }}
+        >
           {error || "Café Not Found"}
         </Text>
-        <Text className="mt-2 text-center text-sm text-[#8A7D75]">
+        <Text
+          style={{
+            marginTop: 8,
+            textAlign: "center",
+            fontSize: 14,
+            color: colors.textSecondary,
+          }}
+        >
           {"We couldn't load this café. It may have been moved or removed."}
         </Text>
         <Pressable
           onPress={() => router.back()}
-          className="mt-6 rounded-xl bg-[#B95E2E] px-6 py-3"
+          style={{
+            marginTop: 24,
+            borderRadius: 12,
+            backgroundColor: colors.primary,
+            paddingHorizontal: 24,
+            paddingVertical: 12,
+          }}
         >
-          <Text className="font-bold text-white">Go Back</Text>
+          <Text style={{ fontWeight: "700", color: "#FFFFFF" }}>Go Back</Text>
         </Pressable>
       </View>
     );
@@ -186,7 +240,7 @@ export default function CafeDetailScreen() {
   const cafeWebsite = (cafe as any).website;
 
   return (
-    <View className="flex-1 bg-[#FAF7F3]">
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -278,33 +332,70 @@ export default function CafeDetailScreen() {
         {/* ================================================= */}
         <View className="px-5 pt-5">
           <View className="flex-row items-center justify-between">
-            <View className="rounded-lg bg-[#F8E9E0] px-3 py-1">
-              <Text className="text-[11px] font-extrabold uppercase tracking-wide text-[#B95E2E]">
+            <View
+              style={{ backgroundColor: colors.chip }}
+              className="rounded-lg px-3 py-1"
+            >
+              <Text
+                style={{ color: colors.primary }}
+                className="text-[11px] font-extrabold uppercase tracking-wide"
+              >
                 {cafe.category}
               </Text>
             </View>
 
-            <View className="flex-row items-center rounded-lg bg-[#FFF5E4] px-2.5 py-1">
+            <View
+              style={{ backgroundColor: isDark ? "#2A1E14" : "#FFF5E4" }}
+              className="flex-row items-center rounded-lg px-2.5 py-1"
+            >
               <Ionicons name="star" size={14} color="#F6B94A" />
-              <Text className="ml-1 text-xs font-extrabold text-[#77532D]">
+              <Text
+                style={{ color: isDark ? "#F8C162" : "#77532D" }}
+                className="ml-1 text-xs font-extrabold"
+              >
                 {cafe.rating.toFixed(1)}
               </Text>
-              <Text className="ml-1 text-[11px] text-[#9A8D85]">
+              <Text
+                style={{ color: colors.muted }}
+                className="ml-1 text-[11px]"
+              >
                 ({cafe.reviewCount})
               </Text>
             </View>
           </View>
 
-          <Text className="mt-2.5 text-2xl font-black text-[#241C18]">
+          <Text
+            style={{
+              marginTop: 10,
+              fontSize: 24,
+              fontWeight: "900",
+              color: colors.text,
+            }}
+          >
             {cafe.name}
           </Text>
 
-          <View className="mt-2 flex-row items-center">
-            <Ionicons name="location-outline" size={16} color="#8A7D75" />
-            <Text className="ml-1.5 flex-1 text-sm font-medium text-[#81746C]">
+          <View style={{ marginTop: 8, flexDirection: "row", alignItems: "center" }}>
+            <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+            <Text
+              style={{
+                marginLeft: 6,
+                flex: 1,
+                fontSize: 14,
+                fontWeight: "500",
+                color: colors.textSecondary,
+              }}
+            >
               {cafe.location}, {cafe.city}
             </Text>
-            <Text className="ml-2 text-sm font-bold text-[#B95E2E]">
+            <Text
+              style={{
+                marginLeft: 8,
+                fontSize: 14,
+                fontWeight: "700",
+                color: colors.primary,
+              }}
+            >
               {cafe.priceRange}
             </Text>
           </View>
@@ -313,15 +404,43 @@ export default function CafeDetailScreen() {
         {/* ================================================= */}
         {/* ACTION SHORTCUTS (Call, Directions, WhatsApp, Menu) */}
         {/* ================================================= */}
-        <View className="mt-5 flex-row justify-around border-y border-[#EEE5DE] bg-white py-3.5 px-3">
+        <View
+          style={{
+            marginTop: 20,
+            flexDirection: "row",
+            justifyContent: "space-around",
+            borderTopWidth: 1,
+            borderBottomWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            paddingVertical: 14,
+            paddingHorizontal: 12,
+          }}
+        >
           <Pressable
             onPress={() => makePhoneCall(cafe.phone)}
-            className="items-center px-3"
+            style={{ alignItems: "center", paddingHorizontal: 12 }}
           >
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
-              <Ionicons name="call-outline" size={20} color="#B95E2E" />
+            <View
+              style={{
+                height: 44,
+                width: 44,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 22,
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <Ionicons name="call-outline" size={20} color={colors.primary} />
             </View>
-            <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+            <Text
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontWeight: "700",
+                color: colors.text,
+              }}
+            >
               Call
             </Text>
           </Pressable>
@@ -330,24 +449,56 @@ export default function CafeDetailScreen() {
             onPress={() =>
               openDirections(cafe.latitude, cafe.longitude, cafe.name)
             }
-            className="items-center px-3"
+            style={{ alignItems: "center", paddingHorizontal: 12 }}
           >
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
-              <Ionicons name="navigate-outline" size={20} color="#B95E2E" />
+            <View
+              style={{
+                height: 44,
+                width: 44,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 22,
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <Ionicons name="navigate-outline" size={20} color={colors.primary} />
             </View>
-            <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+            <Text
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontWeight: "700",
+                color: colors.text,
+              }}
+            >
               Directions
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => openWhatsApp(cafe.phone)}
-            className="items-center px-3"
+            style={{ alignItems: "center", paddingHorizontal: 12 }}
           >
-            <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
+            <View
+              style={{
+                height: 44,
+                width: 44,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 22,
+                backgroundColor: colors.primarySoft,
+              }}
+            >
               <Ionicons name="logo-whatsapp" size={20} color="#25D366" />
             </View>
-            <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+            <Text
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontWeight: "700",
+                color: colors.text,
+              }}
+            >
               Chat
             </Text>
           </Pressable>
@@ -355,12 +506,28 @@ export default function CafeDetailScreen() {
           {cafeWebsite ? (
             <Pressable
               onPress={() => openWebsite(cafeWebsite)}
-              className="items-center px-3"
+              style={{ alignItems: "center", paddingHorizontal: 12 }}
             >
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
-                <Ionicons name="globe-outline" size={20} color="#B95E2E" />
+              <View
+                style={{
+                  height: 44,
+                  width: 44,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 22,
+                  backgroundColor: colors.primarySoft,
+                }}
+              >
+                <Ionicons name="globe-outline" size={20} color={colors.primary} />
               </View>
-              <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
                 Website
               </Text>
             </Pressable>
@@ -372,12 +539,28 @@ export default function CafeDetailScreen() {
                   params: { cafeId: cafe.id, cafeName: cafe.name },
                 })
               }
-              className="items-center px-3"
+              style={{ alignItems: "center", paddingHorizontal: 12 }}
             >
-              <View className="h-11 w-11 items-center justify-center rounded-full bg-[#FAF3EE]">
-                <Ionicons name="create-outline" size={20} color="#B95E2E" />
+              <View
+                style={{
+                  height: 44,
+                  width: 44,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 22,
+                  backgroundColor: colors.primarySoft,
+                }}
+              >
+                <Ionicons name="create-outline" size={20} color={colors.primary} />
               </View>
-              <Text className="mt-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{
+                  marginTop: 6,
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
                 Review
               </Text>
             </Pressable>
@@ -387,21 +570,62 @@ export default function CafeDetailScreen() {
         {/* ================================================= */}
         {/* ABOUT & DESCRIPTION */}
         {/* ================================================= */}
-        <View className="mx-5 mt-5 rounded-2xl border border-[#EEE5DE] bg-white p-4">
-          <Text className="text-base font-extrabold text-[#241C18]">About</Text>
-          <Text className="mt-2 text-sm leading-relaxed text-[#786B63]">
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 20,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            padding: 16,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "800",
+              color: colors.text,
+            }}
+          >
+            About
+          </Text>
+          <Text
+            style={{
+              marginTop: 8,
+              fontSize: 14,
+              lineHeight: 22,
+              color: colors.textSecondary,
+            }}
+          >
             {cafe.description}
           </Text>
 
           {cafe.address ? (
-            <View className="mt-3 flex-row items-start border-t border-[#F2ECE7] pt-3">
+            <View
+              style={{
+                marginTop: 12,
+                flexDirection: "row",
+                alignItems: "flex-start",
+                borderTopWidth: 1,
+                borderTopColor: colors.borderMuted,
+                paddingTop: 12,
+              }}
+            >
               <Ionicons
                 name="map-outline"
                 size={16}
-                color="#8A7D75"
+                color={colors.textSecondary}
                 style={{ marginTop: 2 }}
               />
-              <Text className="ml-2 flex-1 text-xs text-[#8A7D75]">
+              <Text
+                style={{
+                  marginLeft: 8,
+                  flex: 1,
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                }}
+              >
                 {cafe.address}
               </Text>
             </View>
@@ -412,18 +636,48 @@ export default function CafeDetailScreen() {
         {/* AMENITIES */}
         {/* ================================================= */}
         {cafe.amenities && cafe.amenities.length > 0 && (
-          <View className="mx-5 mt-4 rounded-2xl border border-[#EEE5DE] bg-white p-4">
-            <Text className="text-base font-extrabold text-[#241C18]">
+          <View
+            style={{
+              marginHorizontal: 20,
+              marginTop: 16,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "800",
+                color: colors.text,
+              }}
+            >
               Amenities & Features
             </Text>
-            <View className="mt-3 flex-row flex-wrap gap-2">
+            <View style={{ marginTop: 12, flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {cafe.amenities.map((amenity, idx) => (
                 <View
                   key={`amenity-${idx}`}
-                  className="flex-row items-center rounded-xl bg-[#F8F4F0] px-3 py-2"
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderRadius: 12,
+                    backgroundColor: colors.surfaceMuted,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                  }}
                 >
-                  <Ionicons name="checkmark-circle" size={14} color="#B95E2E" />
-                  <Text className="ml-1.5 text-xs font-bold text-[#4B3E36]">
+                  <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
+                  <Text
+                    style={{
+                      marginLeft: 6,
+                      fontSize: 12,
+                      fontWeight: "700",
+                      color: colors.text,
+                    }}
+                  >
                     {amenity}
                   </Text>
                 </View>
@@ -436,20 +690,65 @@ export default function CafeDetailScreen() {
         {/* OPENING HOURS */}
         {/* ================================================= */}
         {cafe.openingHours && Object.keys(cafe.openingHours).length > 0 && (
-          <View className="mx-5 mt-4 rounded-2xl border border-[#EEE5DE] bg-white p-4">
-            <View className="flex-row items-center justify-between">
-              <Text className="text-base font-extrabold text-[#241C18]">
+          <View
+            style={{
+              marginHorizontal: 20,
+              marginTop: 16,
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: 16,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
+              >
                 Opening Hours
               </Text>
-              <View className="flex-row items-center rounded-full bg-[#EBF7EE] px-2.5 py-1">
-                <View className="h-2 w-2 rounded-full bg-[#3FB950]" />
-                <Text className="ml-1.5 text-[11px] font-bold text-[#2E7A3A]">
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  borderRadius: 50,
+                  backgroundColor: colors.successSoft,
+                  paddingHorizontal: 10,
+                  paddingVertical: 4,
+                }}
+              >
+                <View
+                  style={{
+                    height: 8,
+                    width: 8,
+                    borderRadius: 4,
+                    backgroundColor: colors.success,
+                  }}
+                />
+                <Text
+                  style={{
+                    marginLeft: 6,
+                    fontSize: 11,
+                    fontWeight: "700",
+                    color: colors.success,
+                  }}
+                >
                   Open
                 </Text>
               </View>
             </View>
 
-            <View className="mt-3 gap-2">
+            <View style={{ marginTop: 12, gap: 8 }}>
               {DAYS.map((day) => {
                 const hours = (cafe.openingHours as any)[day];
                 const isToday = day === currentDayKey;
@@ -458,25 +757,31 @@ export default function CafeDetailScreen() {
                 return (
                   <View
                     key={day}
-                    className={`flex-row items-center justify-between rounded-lg py-1.5 px-2 ${
-                      isToday ? "bg-[#FAF1EC]" : ""
-                    }`}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      borderRadius: 8,
+                      paddingVertical: 6,
+                      paddingHorizontal: 8,
+                      backgroundColor: isToday ? colors.primarySoft : "transparent",
+                    }}
                   >
                     <Text
-                      className={`text-xs ${
-                        isToday
-                          ? "font-extrabold text-[#B95E2E]"
-                          : "font-medium text-[#786B63]"
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: isToday ? "800" : "500",
+                        color: isToday ? colors.primary : colors.textSecondary,
+                      }}
                     >
                       {formattedDay} {isToday && " (Today)"}
                     </Text>
                     <Text
-                      className={`text-xs ${
-                        isToday
-                          ? "font-extrabold text-[#B95E2E]"
-                          : "font-semibold text-[#302720]"
-                      }`}
+                      style={{
+                        fontSize: 12,
+                        fontWeight: isToday ? "800" : "600",
+                        color: isToday ? colors.primary : colors.text,
+                      }}
                     >
                       {hours || "Closed"}
                     </Text>
@@ -490,13 +795,41 @@ export default function CafeDetailScreen() {
         {/* ================================================= */}
         {/* REVIEWS PREVIEW */}
         {/* ================================================= */}
-        <View className="mx-5 mt-4 rounded-2xl border border-[#EEE5DE] bg-white p-4">
-          <View className="flex-row items-center justify-between">
+        <View
+          style={{
+            marginHorizontal: 20,
+            marginTop: 16,
+            borderRadius: 20,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.surface,
+            padding: 16,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View>
-              <Text className="text-base font-extrabold text-[#241C18]">
+              <Text
+                style={{
+                  fontSize: 16,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
+              >
                 Reviews & Ratings
               </Text>
-              <Text className="mt-0.5 text-xs text-[#8A7D75]">
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 12,
+                  color: colors.textSecondary,
+                }}
+              >
                 {cafe.reviewCount} customer reviews
               </Text>
             </View>
@@ -509,19 +842,47 @@ export default function CafeDetailScreen() {
                 })
               }
             >
-              <Text className="text-xs font-extrabold text-[#B95E2E]">
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "800",
+                  color: colors.primary,
+                }}
+              >
                 See All →
               </Text>
             </Pressable>
           </View>
 
           {/* Rating Summary Snippet */}
-          <View className="mt-3.5 flex-row items-center rounded-xl bg-[#FAF5F0] p-3">
-            <View className="items-center pr-3 border-r border-[#E8DFD8]">
-              <Text className="text-2xl font-black text-[#241C18]">
+          <View
+            style={{
+              marginTop: 14,
+              flexDirection: "row",
+              alignItems: "center",
+              borderRadius: 12,
+              backgroundColor: colors.surfaceMuted,
+              padding: 12,
+            }}
+          >
+            <View
+              style={{
+                alignItems: "center",
+                paddingRight: 12,
+                borderRightWidth: 1,
+                borderRightColor: colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: "900",
+                  color: colors.text,
+                }}
+              >
                 {cafe.rating.toFixed(1)}
               </Text>
-              <View className="flex-row mt-0.5">
+              <View style={{ flexDirection: "row", marginTop: 2 }}>
                 {[1, 2, 3, 4, 5].map((s) => (
                   <Ionicons
                     key={s}
@@ -529,16 +890,28 @@ export default function CafeDetailScreen() {
                       s <= Math.round(cafe.rating) ? "star" : "star-outline"
                     }
                     size={11}
-                    color="#F6B94A"
+                    color={colors.star}
                   />
                 ))}
               </View>
             </View>
-            <View className="ml-3 flex-1">
-              <Text className="text-xs font-bold text-[#302720]">
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
+              >
                 Loved by coffee lovers
               </Text>
-              <Text className="mt-0.5 text-[11px] text-[#8A7D75]">
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 11,
+                  color: colors.textSecondary,
+                }}
+              >
                 Atmosphere, coffee quality & service
               </Text>
             </View>
@@ -546,27 +919,54 @@ export default function CafeDetailScreen() {
 
           {/* Reviews List preview */}
           {reviews.length > 0 ? (
-            <View className="mt-3 divide-y divide-[#F2ECE7]">
+            <View style={{ marginTop: 12 }}>
               {reviews.slice(0, 2).map((rev) => (
-                <View key={rev.id} className="py-2.5">
-                  <View className="flex-row items-center justify-between">
-                    <Text className="text-xs font-bold text-[#302720]">
-                      {rev.userName}
+                <View
+                  key={rev.id}
+                  style={{
+                    paddingVertical: 12,
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.borderMuted,
+                  }}
+                >
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        fontWeight: "700",
+                        color: colors.text,
+                      }}
+                    >
+                      {rev.userName || "Guest"}
                     </Text>
-                    <View className="flex-row">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Ionicons
-                          key={s}
-                          name={s <= rev.rating ? "star" : "star-outline"}
-                          size={10}
-                          color="#F6B94A"
-                        />
-                      ))}
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <Ionicons name="star" size={10} color={colors.star} />
+                      <Text
+                        style={{
+                          marginLeft: 2,
+                          fontSize: 10,
+                          fontWeight: "800",
+                          color: colors.text,
+                        }}
+                      >
+                        {rev.rating}
+                      </Text>
                     </View>
                   </View>
                   <Text
-                    className="mt-1 text-xs text-[#786B63]"
                     numberOfLines={2}
+                    style={{
+                      marginTop: 4,
+                      fontSize: 12,
+                      lineHeight: 17,
+                      color: colors.textSecondary,
+                    }}
                   >
                     {rev.comment}
                   </Text>
@@ -574,8 +974,8 @@ export default function CafeDetailScreen() {
               ))}
             </View>
           ) : (
-            <View className="mt-3 py-2 items-center">
-              <Text className="text-xs text-[#9B8F87]">
+            <View style={{ marginTop: 12, paddingVertical: 8, alignItems: "center" }}>
+              <Text style={{ fontSize: 12, color: colors.textSecondary }}>
                 No reviews yet. Be the first to share your experience!
               </Text>
             </View>
@@ -589,29 +989,74 @@ export default function CafeDetailScreen() {
                 params: { cafeId: cafe.id, cafeName: cafe.name },
               })
             }
-            className="mt-3 rounded-xl border border-[#B95E2E] py-2.5 items-center"
+            style={{
+              marginTop: 12,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: colors.primary,
+              paddingVertical: 10,
+              alignItems: "center",
+            }}
           >
-            <Text className="text-xs font-extrabold text-[#B95E2E]">
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: "800",
+                color: colors.primary,
+              }}
+            >
               ✍️ Write a Review
             </Text>
           </Pressable>
         </View>
 
-        <View className="h-6" />
+        <View style={{ height: 24 }} />
       </ScrollView>
 
       {/* ================================================= */}
       {/* STICKY BOTTOM BAR — BOOK NOW */}
       {/* ================================================= */}
       <View
-        style={{ paddingBottom: Math.max(insets.bottom, 16) }}
-        className="absolute inset-x-0 bottom-0 flex-row items-center justify-between border-t border-[#EEE5DE] bg-white px-5 pt-3.5 shadow-lg"
+        style={{
+          paddingBottom: Math.max(insets.bottom, 16),
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          backgroundColor: colors.surface,
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 20,
+          paddingTop: 14,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: isDark ? 0.35 : 0.08,
+          shadowRadius: 8,
+          elevation: 8,
+        }}
       >
         <View>
-          <Text className="text-[11px] font-bold uppercase tracking-wider text-[#93867E]">
+          <Text
+            style={{
+              fontSize: 11,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: colors.textSecondary,
+            }}
+          >
             Table Booking
           </Text>
-          <Text className="text-base font-extrabold text-[#241C18]">
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: "800",
+              color: colors.text,
+            }}
+          >
             Instant Confirmation
           </Text>
         </View>
@@ -623,9 +1068,16 @@ export default function CafeDetailScreen() {
               params: { cafeId: cafe.id },
             })
           }
-          className="rounded-2xl bg-[#B95E2E] px-7 py-3.5"
+          style={{
+            borderRadius: 16,
+            backgroundColor: colors.primary,
+            paddingHorizontal: 28,
+            paddingVertical: 14,
+          }}
         >
-          <Text className="text-sm font-extrabold text-white">Book Table</Text>
+          <Text style={{ fontSize: 14, fontWeight: "800", color: "#FFFFFF" }}>
+            Book Table
+          </Text>
         </Pressable>
       </View>
     </View>

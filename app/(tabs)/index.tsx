@@ -16,31 +16,27 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import {
   Cafe,
   getCafes,
   getFeaturedCafes,
 } from "../../src/services/firebase/cafes";
-
 import {
   getSavedCafeIds,
   toggleCafeSaved,
 } from "../../src/services/firebase/favorites";
 
 export default function HomeScreen() {
-  const [location, setLocation] = useState("Getting location...");
+  const { colors, isDark } = useTheme();
 
+  const [location, setLocation] = useState("Getting location...");
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [featuredCafes, setFeaturedCafes] = useState<Cafe[]>([]);
-
   const [searchText, setSearchText] = useState("");
-
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
-
   const [error, setError] = useState("");
-
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
   /* =====================================================
@@ -76,9 +72,8 @@ export default function HomeScreen() {
       } else {
         setLocation("Current Location");
       }
-    } catch (error) {
-      console.log("Location error:", error);
-
+    } catch (err) {
+      console.log("Location error:", err);
       setLocation("Location unavailable");
     }
   };
@@ -98,9 +93,8 @@ export default function HomeScreen() {
 
       setCafes(allCafes);
       setFeaturedCafes(featured);
-    } catch (error) {
-      console.error("Failed to load cafés:", error);
-
+    } catch (err) {
+      console.error("Failed to load cafés:", err);
       setError("We couldn't load cafés right now. Please try again.");
     } finally {
       setLoading(false);
@@ -115,10 +109,9 @@ export default function HomeScreen() {
   const loadSavedCafes = async () => {
     try {
       const ids = await getSavedCafeIds();
-
       setSavedIds(ids);
-    } catch (error) {
-      console.error("Failed to load saved cafes:", error);
+    } catch (err) {
+      console.error("Failed to load saved cafes:", err);
     }
   };
 
@@ -144,7 +137,6 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-
     Promise.all([loadCafes(), loadSavedCafes()]);
   }, []);
 
@@ -161,16 +153,14 @@ export default function HomeScreen() {
           if (current.includes(cafeId)) {
             return current;
           }
-
           return [...current, cafeId];
         }
-
         return current.filter((id) => id !== cafeId);
       });
-    } catch (error: any) {
-      console.error("Save cafe error:", error);
+    } catch (err: any) {
+      console.error("Save cafe error:", err);
 
-      if (error?.message === "LOGIN_REQUIRED") {
+      if (err?.message === "LOGIN_REQUIRED") {
         Alert.alert("Sign in required", "Please sign in to save cafes.", [
           {
             text: "Cancel",
@@ -181,7 +171,6 @@ export default function HomeScreen() {
             onPress: () => router.push("/(auth)/login"),
           },
         ]);
-
         return;
       }
 
@@ -223,10 +212,6 @@ export default function HomeScreen() {
       .slice(0, 8);
   }, [filteredCafes, featuredCafes]);
 
-  /* =====================================================
-     OPEN CAFE
-  ===================================================== */
-
   const openCafe = (cafeId: string) => {
     router.push({
       pathname: "/cafe/[id]",
@@ -236,40 +221,30 @@ export default function HomeScreen() {
     });
   };
 
-  /* =====================================================
-     SEE ALL
-  ===================================================== */
-
   const handleSeeAll = () => {
     router.push("/(tabs)/search");
   };
 
-  /* =====================================================
-     RETRY
-  ===================================================== */
-
   const handleRetry = () => {
     setLoading(true);
-
     Promise.all([loadCafes(), loadSavedCafes()]);
   };
 
-  /* =====================================================
-     UI
-  ===================================================== */
-
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["top"]}
+    >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: 60,
+          paddingBottom: 70,
         }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#B95E2E"
+            tintColor={colors.primary}
           />
         }
       >
@@ -277,19 +252,50 @@ export default function HomeScreen() {
             HEADER
         ================================================= */}
 
-        <View className="flex-row items-center justify-between px-5 pb-1 pt-3">
-          <View className="flex-1 flex-row items-center">
-            <View className="h-10 w-10 items-center justify-center rounded-[14px] bg-[#F7E5DA]">
-              <Ionicons name="location" size={17} color="#B95E2E" />
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 20,
+            paddingBottom: 4,
+            paddingTop: 12,
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                height: 40,
+                width: 40,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 14,
+                backgroundColor: colors.primarySoft,
+              }}
+            >
+              <Ionicons name="location" size={17} color={colors.primary} />
             </View>
 
-            <View className="ml-2.5 flex-1">
-              <Text className="text-[11px] font-semibold uppercase tracking-[0.5px] text-[#93867E]">
+            <View style={{ marginLeft: 10, flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 11,
+                  fontWeight: "600",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                  color: colors.textSecondary,
+                }}
+              >
                 Current location
               </Text>
 
               <Text
-                className="mt-0.5 text-sm font-bold text-[#302720]"
+                style={{
+                  marginTop: 2,
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: colors.text,
+                }}
                 numberOfLines={1}
               >
                 {location}
@@ -298,12 +304,34 @@ export default function HomeScreen() {
           </View>
 
           <Pressable
-            className="relative h-[42px] w-[42px] items-center justify-center rounded-[15px] border border-[#EEE5DE] bg-white"
+            style={{
+              position: "relative",
+              height: 42,
+              width: 42,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 15,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+            }}
             onPress={() => router.push("/profile/notifications")}
           >
-            <Ionicons name="notifications-outline" size={22} color="#2A211D" />
+            <Ionicons name="notifications-outline" size={22} color={colors.text} />
 
-            <View className="absolute right-[9px] top-[9px] h-[7px] w-[7px] rounded-full border-[1.5px] border-white bg-[#B95E2E]" />
+            <View
+              style={{
+                position: "absolute",
+                right: 9,
+                top: 9,
+                height: 7,
+                width: 7,
+                borderRadius: 4,
+                borderWidth: 1.5,
+                borderColor: colors.surface,
+                backgroundColor: colors.primary,
+              }}
+            />
           </Pressable>
         </View>
 
@@ -311,18 +339,40 @@ export default function HomeScreen() {
             HERO
         ================================================= */}
 
-        <View className="px-5 pb-[18px] pt-[25px]">
-          <Text className="mb-1.5 text-[13px] font-bold text-[#B95E2E]">
+        <View style={{ paddingHorizontal: 20, paddingBottom: 18, paddingTop: 24 }}>
+          <Text
+            style={{
+              marginBottom: 6,
+              fontSize: 13,
+              fontWeight: "700",
+              color: colors.primary,
+            }}
+          >
             Find your next favorite place
           </Text>
 
-          <Text className="text-[32px] font-black leading-[37px] tracking-[-0.8px] text-[#241C18]">
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: "900",
+              lineHeight: 37,
+              letterSpacing: -0.8,
+              color: colors.text,
+            }}
+          >
             Good coffee.
             {"\n"}
             Great moments.
           </Text>
 
-          <Text className="mt-2 text-sm leading-[21px] text-[#81746C]">
+          <Text
+            style={{
+              marginTop: 8,
+              fontSize: 14,
+              lineHeight: 21,
+              color: colors.textSecondary,
+            }}
+          >
             Discover beautiful cafés around you.
           </Text>
         </View>
@@ -331,31 +381,73 @@ export default function HomeScreen() {
             SEARCH
         ================================================= */}
 
-        <View className="mx-5 h-[65px] flex-row items-center rounded-[50px] border border-[#EDE3DC] bg-white px-3 shadow-sm">
-          <View className="h-[45px] w-[45px] items-center justify-center rounded-[50px]">
-            <Ionicons name="search-outline" size={25} color="#8A7D75" />
+        <View
+          style={{
+            marginHorizontal: 20,
+            height: 62,
+            flexDirection: "row",
+            alignItems: "center",
+            borderRadius: 50,
+            borderWidth: 1,
+            borderColor: colors.inputBorder,
+            backgroundColor: colors.inputBackground,
+            paddingHorizontal: 12,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDark ? 0.3 : 0.05,
+            shadowRadius: 8,
+            elevation: 2,
+          }}
+        >
+          <View
+            style={{
+              height: 44,
+              width: 44,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 22,
+            }}
+          >
+            <Ionicons name="search-outline" size={24} color={colors.textMuted} />
           </View>
 
           <TextInput
             value={searchText}
             onChangeText={setSearchText}
             placeholder="Search cafés, food, location..."
-            placeholderTextColor="#9B9089"
-            className="h-full flex-1 px-2.5 text-[15px] font-semibold text-[#302720]"
+            placeholderTextColor={colors.textMuted}
+            style={{
+              height: "100%",
+              flex: 1,
+              paddingHorizontal: 10,
+              fontSize: 15,
+              fontWeight: "600",
+              color: colors.text,
+            }}
             returnKeyType="search"
           />
 
           {searchText.length > 0 && (
-            <Pressable onPress={() => setSearchText("")} className="mr-1 p-1">
-              <Ionicons name="close-circle" size={20} color="#A99B92" />
+            <Pressable
+              onPress={() => setSearchText("")}
+              style={{ marginRight: 4, padding: 4 }}
+            >
+              <Ionicons name="close-circle" size={20} color={colors.textMuted} />
             </Pressable>
           )}
 
           <Pressable
-            className="h-[45px] w-[45px] items-center justify-center rounded-[50px] bg-[#F9E8DE]"
+            style={{
+              height: 44,
+              width: 44,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 22,
+              backgroundColor: colors.primarySoft,
+            }}
             onPress={() => router.push("/filters")}
           >
-            <Ionicons name="options-outline" size={21} color="#B95E2E" />
+            <Ionicons name="options-outline" size={21} color={colors.primary} />
           </Pressable>
         </View>
 
@@ -364,26 +456,66 @@ export default function HomeScreen() {
         ================================================= */}
 
         {error.length > 0 && (
-          <View className="mx-5 mt-[18px] flex-row rounded-[17px] border border-[#F2D7CA] bg-[#FFF5F1] p-[15px]">
-            <View className="h-[42px] w-[42px] items-center justify-center rounded-[14px] bg-white">
+          <View
+            style={{
+              marginHorizontal: 20,
+              marginTop: 18,
+              flexDirection: "row",
+              borderRadius: 17,
+              borderWidth: 1,
+              borderColor: isDark ? "#4A1D1C" : "#F2D7CA",
+              backgroundColor: colors.dangerSoft,
+              padding: 15,
+            }}
+          >
+            <View
+              style={{
+                height: 42,
+                width: 42,
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: 14,
+                backgroundColor: colors.surface,
+              }}
+            >
               <Ionicons
                 name="cloud-offline-outline"
                 size={22}
-                color="#B95E2E"
+                color={colors.primary}
               />
             </View>
 
-            <View className="ml-3 flex-1">
-              <Text className="text-sm font-extrabold text-[#3A2922]">
+            <View style={{ marginLeft: 12, flex: 1 }}>
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "800",
+                  color: colors.text,
+                }}
+              >
                 Something went wrong
               </Text>
 
-              <Text className="mt-0.5 text-xs leading-[17px] text-[#7E6D64]">
+              <Text
+                style={{
+                  marginTop: 2,
+                  fontSize: 12,
+                  lineHeight: 17,
+                  color: colors.textSecondary,
+                }}
+              >
                 {error}
               </Text>
 
               <Pressable onPress={handleRetry}>
-                <Text className="mt-2 text-[13px] font-extrabold text-[#B95E2E]">
+                <Text
+                  style={{
+                    marginTop: 8,
+                    fontSize: 13,
+                    fontWeight: "800",
+                    color: colors.primary,
+                  }}
+                >
                   Try again
                 </Text>
               </Pressable>
@@ -396,10 +528,16 @@ export default function HomeScreen() {
         ================================================= */}
 
         {loading ? (
-          <View className="items-center justify-center py-[100px]">
-            <ActivityIndicator size="large" color="#B95E2E" />
+          <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 100 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
 
-            <Text className="mt-3 text-[13px] text-[#8A7D75]">
+            <Text
+              style={{
+                marginTop: 12,
+                fontSize: 13,
+                color: colors.textSecondary,
+              }}
+            >
               Finding beautiful cafés...
             </Text>
           </View>
@@ -410,20 +548,48 @@ export default function HomeScreen() {
             ================================================= */}
 
             {featuredCafes.length > 0 && (
-              <View className="mt-[30px]">
-                <View className="mb-4 flex-row items-end justify-between px-5">
+              <View style={{ marginTop: 28 }}>
+                <View
+                  style={{
+                    marginBottom: 16,
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 20,
+                  }}
+                >
                   <View>
-                    <Text className="text-[21px] font-extrabold tracking-[-0.3px] text-[#29201B]">
+                    <Text
+                      style={{
+                        fontSize: 21,
+                        fontWeight: "800",
+                        letterSpacing: -0.3,
+                        color: colors.text,
+                      }}
+                    >
                       Featured cafés
                     </Text>
 
-                    <Text className="mt-0.5 text-xs text-[#968980]">
+                    <Text
+                      style={{
+                        marginTop: 2,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       Places worth discovering
                     </Text>
                   </View>
 
                   <Pressable onPress={handleSeeAll} hitSlop={10}>
-                    <Text className="pb-0.5 text-[13px] font-extrabold text-[#B95E2E]">
+                    <Text
+                      style={{
+                        paddingBottom: 2,
+                        fontSize: 13,
+                        fontWeight: "800",
+                        color: colors.primary,
+                      }}
+                    >
                       See all
                     </Text>
                   </Pressable>
@@ -437,7 +603,7 @@ export default function HomeScreen() {
                   contentContainerStyle={{
                     paddingHorizontal: 20,
                   }}
-                  ItemSeparatorComponent={() => <View className="w-4" />}
+                  ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
                   renderItem={({ item }) => (
                     <FeaturedCafeCard
                       cafe={item}
@@ -451,18 +617,39 @@ export default function HomeScreen() {
             )}
 
             {/* =================================================
-                SEARCH RESULTS
+                SEARCH RESULTS OR EXPLORE
             ================================================= */}
 
             {searchText.trim().length > 0 ? (
-              <View className="mt-[30px]">
-                <View className="mb-4 flex-row items-end justify-between px-5">
+              <View style={{ marginTop: 28 }}>
+                <View
+                  style={{
+                    marginBottom: 16,
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 20,
+                  }}
+                >
                   <View>
-                    <Text className="text-[21px] font-extrabold tracking-[-0.3px] text-[#29201B]">
+                    <Text
+                      style={{
+                        fontSize: 21,
+                        fontWeight: "800",
+                        letterSpacing: -0.3,
+                        color: colors.text,
+                      }}
+                    >
                       Search results
                     </Text>
 
-                    <Text className="mt-0.5 text-xs text-[#968980]">
+                    <Text
+                      style={{
+                        marginTop: 2,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       {filteredCafes.length} cafés found
                     </Text>
                   </View>
@@ -471,7 +658,7 @@ export default function HomeScreen() {
                 {filteredCafes.length === 0 ? (
                   <EmptySearch />
                 ) : (
-                  <View className="px-5">
+                  <View style={{ paddingHorizontal: 20 }}>
                     {filteredCafes.map((cafe) => (
                       <NearbyCafeCard
                         key={cafe.id}
@@ -485,24 +672,48 @@ export default function HomeScreen() {
                 )}
               </View>
             ) : (
-              /* =================================================
-                 EXPLORE
-              ================================================= */
-
-              <View className="mt-[30px]">
-                <View className="mb-4 flex-row items-end justify-between px-5">
+              <View style={{ marginTop: 28 }}>
+                <View
+                  style={{
+                    marginBottom: 16,
+                    flexDirection: "row",
+                    alignItems: "flex-end",
+                    justifyContent: "space-between",
+                    paddingHorizontal: 20,
+                  }}
+                >
                   <View>
-                    <Text className="text-[21px] font-extrabold tracking-[-0.3px] text-[#29201B]">
+                    <Text
+                      style={{
+                        fontSize: 21,
+                        fontWeight: "800",
+                        letterSpacing: -0.3,
+                        color: colors.text,
+                      }}
+                    >
                       Explore cafés
                     </Text>
 
-                    <Text className="mt-0.5 text-xs text-[#968980]">
+                    <Text
+                      style={{
+                        marginTop: 2,
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      }}
+                    >
                       More places for your next coffee
                     </Text>
                   </View>
 
                   <Pressable onPress={handleSeeAll} hitSlop={10}>
-                    <Text className="pb-0.5 text-[13px] font-extrabold text-[#B95E2E]">
+                    <Text
+                      style={{
+                        paddingBottom: 2,
+                        fontSize: 13,
+                        fontWeight: "800",
+                        color: colors.primary,
+                      }}
+                    >
                       See all
                     </Text>
                   </Pressable>
@@ -511,7 +722,7 @@ export default function HomeScreen() {
                 {nearbyCafes.length === 0 ? (
                   <EmptyCafes />
                 ) : (
-                  <View className="px-5">
+                  <View style={{ paddingHorizontal: 20 }}>
                     {nearbyCafes.map((cafe) => (
                       <NearbyCafeCard
                         key={cafe.id}
@@ -526,15 +737,11 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* =================================================
-                EMPTY DATABASE
-            ================================================= */}
-
             {cafes.length === 0 && !error && <EmptyCafes />}
           </>
         )}
 
-        <View className="h-[30px]" />
+        <View style={{ height: 30 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -557,28 +764,66 @@ function FeaturedCafeCard({
   isSaved,
   onToggleSave,
 }: FeaturedCafeCardProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      className="w-[300px] overflow-hidden rounded-[23px] border border-[#EEE4DD] bg-white shadow-md"
+      style={{
+        width: 300,
+        overflow: "hidden",
+        borderRadius: 23,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: isDark ? 0.35 : 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+      }}
     >
-      <View className="relative h-[190px] bg-[#E9DED7]">
+      <View
+        style={{
+          position: "relative",
+          height: 190,
+          backgroundColor: colors.surfaceMuted,
+        }}
+      >
         <Image
           source={{
             uri:
               cafe.image ||
               "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
           }}
-          className="h-full w-full"
+          style={{ height: "100%", width: "100%" }}
           resizeMode="cover"
         />
 
-        <View className="absolute inset-x-0 bottom-0 h-[70px] bg-black/10" />
+        <View
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 70,
+            backgroundColor: "rgba(0,0,0,0.2)",
+          }}
+        />
 
         {/* FAVORITE */}
-
         <Pressable
-          className="absolute right-[13px] top-[13px] h-[38px] w-[38px] items-center justify-center rounded-[14px] bg-white/95"
+          style={{
+            position: "absolute",
+            right: 13,
+            top: 13,
+            height: 38,
+            width: 38,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 14,
+            backgroundColor: isDark ? "rgba(30, 23, 19, 0.9)" : "rgba(255, 255, 255, 0.95)",
+          }}
           onPress={(event) => {
             event.stopPropagation();
             onToggleSave();
@@ -587,62 +832,146 @@ function FeaturedCafeCard({
           <Ionicons
             name={isSaved ? "heart" : "heart-outline"}
             size={19}
-            color={isSaved ? "#E0524D" : "#302720"}
+            color={isSaved ? colors.danger : colors.text}
           />
         </Pressable>
 
-        {/* FEATURED */}
-
-        <View className="absolute left-[13px] top-[13px] flex-row items-center rounded-[10px] bg-[#412D22]/90 px-2.5 py-1.5">
+        {/* FEATURED BADGE */}
+        <View
+          style={{
+            position: "absolute",
+            left: 13,
+            top: 13,
+            flexDirection: "row",
+            alignItems: "center",
+            borderRadius: 10,
+            backgroundColor: "rgba(36, 28, 24, 0.88)",
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+          }}
+        >
           <Ionicons name="sparkles" size={12} color="#FFFFFF" />
-
-          <Text className="ml-1 text-[10px] font-extrabold text-white">
+          <Text
+            style={{
+              marginLeft: 4,
+              fontSize: 10,
+              fontWeight: "800",
+              color: "#FFFFFF",
+            }}
+          >
             Featured
           </Text>
         </View>
 
         {/* RATING */}
-
-        <View className="absolute bottom-[13px] left-[13px] flex-row items-center rounded-[10px] bg-white px-2.5 py-1.5">
-          <Ionicons name="star" size={13} color="#F6B94A" />
-
-          <Text className="ml-1 text-xs font-extrabold text-[#302720]">
+        <View
+          style={{
+            position: "absolute",
+            bottom: 13,
+            left: 13,
+            flexDirection: "row",
+            alignItems: "center",
+            borderRadius: 10,
+            backgroundColor: isDark ? colors.surface : "#FFFFFF",
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+          }}
+        >
+          <Ionicons name="star" size={13} color={colors.star} />
+          <Text
+            style={{
+              marginLeft: 4,
+              fontSize: 12,
+              fontWeight: "800",
+              color: colors.text,
+            }}
+          >
             {cafe.rating.toFixed(1)}
           </Text>
         </View>
       </View>
 
-      <View className="p-[15px]">
+      <View style={{ padding: 15 }}>
         <Text
-          className="text-lg font-extrabold text-[#2B211C]"
+          style={{
+            fontSize: 18,
+            fontWeight: "800",
+            color: colors.text,
+          }}
           numberOfLines={1}
         >
           {cafe.name}
         </Text>
 
-        <View className="mt-1.5 flex-row items-center">
-          <Ionicons name="location-outline" size={14} color="#8B7E76" />
-
+        <View
+          style={{
+            marginTop: 6,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={14}
+            color={colors.textSecondary}
+          />
           <Text
-            className="ml-1 flex-1 text-xs text-[#877970]"
+            style={{
+              marginLeft: 4,
+              flex: 1,
+              fontSize: 12,
+              color: colors.textSecondary,
+            }}
             numberOfLines={1}
           >
             {cafe.location}, {cafe.city}
           </Text>
         </View>
 
-        <View className="mt-3 flex-row items-center">
-          <View className="rounded-lg bg-[#F8E9E0] px-2.5 py-1">
-            <Text className="text-[10px] font-extrabold text-[#A8522B]">
+        <View
+          style={{
+            marginTop: 12,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              borderRadius: 8,
+              backgroundColor: colors.primarySoft,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 10,
+                fontWeight: "800",
+                color: colors.primary,
+              }}
+            >
               {cafe.category}
             </Text>
           </View>
 
-          <Text className="ml-2 text-xs font-extrabold text-[#5E514A]">
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 12,
+              fontWeight: "800",
+              color: colors.textSecondary,
+            }}
+          >
             {cafe.priceRange}
           </Text>
 
-          <Text className="ml-2 text-[11px] text-[#9A8D85]">
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 11,
+              color: colors.textSecondary,
+            }}
+          >
             {cafe.reviewCount} reviews
           </Text>
         </View>
@@ -668,10 +997,26 @@ function NearbyCafeCard({
   isSaved,
   onToggleSave,
 }: NearbyCafeCardProps) {
+  const { colors, isDark } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row items-center rounded-[19px] border border-[#EEE5DE] bg-white p-[11px] shadow-sm"
+      style={{
+        marginBottom: 12,
+        flexDirection: "row",
+        alignItems: "center",
+        borderRadius: 19,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        padding: 11,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.25 : 0.04,
+        shadowRadius: 6,
+        elevation: 2,
+      }}
     >
       <Image
         source={{
@@ -679,70 +1024,147 @@ function NearbyCafeCard({
             cafe.image ||
             "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb",
         }}
-        className="h-[82px] w-[82px] rounded-[14px] bg-[#E9DED7]"
+        style={{
+          height: 82,
+          width: 82,
+          borderRadius: 14,
+          backgroundColor: colors.surfaceMuted,
+        }}
         resizeMode="cover"
       />
 
-      <View className="ml-[13px] min-w-0 flex-1">
-        <View className="flex-row items-center">
+      <View style={{ marginLeft: 13, flex: 1, minWidth: 0 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text
-            className="flex-1 text-[15px] font-extrabold text-[#2B211C]"
+            style={{
+              flex: 1,
+              fontSize: 15,
+              fontWeight: "800",
+              color: colors.text,
+            }}
             numberOfLines={1}
           >
             {cafe.name}
           </Text>
 
-          <View className="ml-2 flex-row items-center rounded-[7px] bg-[#FFF5E4] px-1.5 py-1">
-            <Ionicons name="star" size={11} color="#F6B94A" />
-
-            <Text className="ml-0.5 text-[10px] font-extrabold text-[#77532D]">
+          <View
+            style={{
+              marginLeft: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              borderRadius: 7,
+              backgroundColor: isDark ? "#2F2312" : "#FFF5E4",
+              paddingHorizontal: 6,
+              paddingVertical: 4,
+            }}
+          >
+            <Ionicons name="star" size={11} color={colors.star} />
+            <Text
+              style={{
+                marginLeft: 2,
+                fontSize: 10,
+                fontWeight: "800",
+                color: isDark ? "#F8C162" : "#77532D",
+              }}
+            >
               {cafe.rating.toFixed(1)}
             </Text>
           </View>
         </View>
 
-        <View className="mt-1.5 flex-row items-center">
-          <Ionicons name="location-outline" size={13} color="#8D8179" />
-
+        <View
+          style={{
+            marginTop: 6,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <Ionicons
+            name="location-outline"
+            size={13}
+            color={colors.textSecondary}
+          />
           <Text
-            className="ml-0.5 flex-1 text-[11px] text-[#8B7E76]"
+            style={{
+              marginLeft: 2,
+              flex: 1,
+              fontSize: 11,
+              color: colors.textSecondary,
+            }}
             numberOfLines={1}
           >
             {cafe.location}, {cafe.city}
           </Text>
         </View>
 
-        <View className="mt-2.5 flex-row items-center">
-          <View className="rounded-[7px] bg-[#F7F1ED] px-2 py-1">
-            <Text className="text-[9px] font-bold text-[#725D50]">
+        <View
+          style={{
+            marginTop: 10,
+            flexDirection: "row",
+            alignItems: "center",
+          }}
+        >
+          <View
+            style={{
+              borderRadius: 7,
+              backgroundColor: colors.primarySoft,
+              paddingHorizontal: 8,
+              paddingVertical: 4,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 9,
+                fontWeight: "700",
+                color: colors.primary,
+              }}
+            >
               {cafe.category}
             </Text>
           </View>
 
-          <Text className="ml-2 text-[11px] font-bold text-[#75675F]">
+          <Text
+            style={{
+              marginLeft: 8,
+              fontSize: 11,
+              fontWeight: "700",
+              color: colors.textSecondary,
+            }}
+          >
             {cafe.priceRange}
           </Text>
 
-          <View className="flex-1" />
+          <View style={{ flex: 1 }} />
 
           {/* SAVE */}
-
           <Pressable
             onPress={(event) => {
               event.stopPropagation();
               onToggleSave();
             }}
             hitSlop={8}
-            className="ml-2 h-8 w-8 items-center justify-center rounded-full bg-[#FAF4F0]"
+            style={{
+              marginLeft: 8,
+              height: 32,
+              width: 32,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 16,
+              backgroundColor: colors.surfaceMuted,
+            }}
           >
             <Ionicons
               name={isSaved ? "heart" : "heart-outline"}
               size={17}
-              color={isSaved ? "#E0524D" : "#806F65"}
+              color={isSaved ? colors.danger : colors.muted}
             />
           </Pressable>
 
-          <Ionicons name="chevron-forward" size={17} color="#B7ABA3" />
+          <Ionicons
+            name="chevron-forward"
+            size={17}
+            color={colors.muted}
+          />
         </View>
       </View>
     </Pressable>
@@ -754,17 +1176,55 @@ function NearbyCafeCard({
 ========================================================= */
 
 function EmptySearch() {
+  const { colors } = useTheme();
+
   return (
-    <View className="mx-5 items-center rounded-[20px] border border-[#EEE5DE] bg-white px-6 py-[35px]">
-      <View className="h-[58px] w-[58px] items-center justify-center rounded-[20px] bg-[#F8E8DE]">
-        <Ionicons name="search-outline" size={28} color="#B95E2E" />
+    <View
+      style={{
+        marginHorizontal: 20,
+        alignItems: "center",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        paddingHorizontal: 24,
+        paddingVertical: 35,
+      }}
+    >
+      <View
+        style={{
+          height: 58,
+          width: 58,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 20,
+          backgroundColor: colors.primarySoft,
+        }}
+      >
+        <Ionicons name="search-outline" size={28} color={colors.primary} />
       </View>
 
-      <Text className="mt-[13px] text-base font-extrabold text-[#302720]">
+      <Text
+        style={{
+          marginTop: 13,
+          fontSize: 16,
+          fontWeight: "800",
+          color: colors.text,
+        }}
+      >
         No cafés found
       </Text>
 
-      <Text className="mt-1.5 max-w-[280px] text-center text-xs leading-[18px] text-[#8C7E75]">
+      <Text
+        style={{
+          marginTop: 6,
+          maxWidth: 280,
+          textAlign: "center",
+          fontSize: 12,
+          lineHeight: 18,
+          color: colors.textSecondary,
+        }}
+      >
         Try searching for another café, location, or category.
       </Text>
     </View>
@@ -776,17 +1236,55 @@ function EmptySearch() {
 ========================================================= */
 
 function EmptyCafes() {
+  const { colors } = useTheme();
+
   return (
-    <View className="mx-5 items-center rounded-[20px] border border-[#EEE5DE] bg-white px-6 py-[35px]">
-      <View className="h-[58px] w-[58px] items-center justify-center rounded-[20px] bg-[#F8E8DE]">
-        <Ionicons name="cafe-outline" size={28} color="#B95E2E" />
+    <View
+      style={{
+        marginHorizontal: 20,
+        alignItems: "center",
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+        paddingHorizontal: 24,
+        paddingVertical: 35,
+      }}
+    >
+      <View
+        style={{
+          height: 58,
+          width: 58,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 20,
+          backgroundColor: colors.primarySoft,
+        }}
+      >
+        <Ionicons name="cafe-outline" size={28} color={colors.primary} />
       </View>
 
-      <Text className="mt-[13px] text-base font-extrabold text-[#302720]">
+      <Text
+        style={{
+          marginTop: 13,
+          fontSize: 16,
+          fontWeight: "800",
+          color: colors.text,
+        }}
+      >
         No cafés available
       </Text>
 
-      <Text className="mt-1.5 max-w-[280px] text-center text-xs leading-[18px] text-[#8C7E75]">
+      <Text
+        style={{
+          marginTop: 6,
+          maxWidth: 280,
+          textAlign: "center",
+          fontSize: 12,
+          lineHeight: 18,
+          color: colors.textSecondary,
+        }}
+      >
         We could not find any cafés right now. Pull down to refresh.
       </Text>
     </View>

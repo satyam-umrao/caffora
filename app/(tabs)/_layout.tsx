@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 
+import { useTheme } from "../../src/context/ThemeContext";
 
 const TAB_CONFIG = {
   index: { label: "Home", icon: Home },
@@ -30,6 +31,7 @@ type CustomTabBarProps = {
 // Fixed width for the animated background highlight
 
 function CustomTabBar({ state, navigation }: CustomTabBarProps) {
+  const { colors, isDark } = useTheme();
   const [barWidth, setBarWidth] = useState(0);
 
   const activeRouteName = state.routes[state.index]?.name;
@@ -74,7 +76,7 @@ function CustomTabBar({ state, navigation }: CustomTabBarProps) {
 
   return (
     <LinearGradient
-      colors={["#ffffff", "#ffffff"]}
+      colors={[colors.tabBarBackground, colors.tabBarBackground]}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       onLayout={handleLayout}
@@ -90,9 +92,11 @@ function CustomTabBar({ state, navigation }: CustomTabBarProps) {
         left: 0,
         right: 0,
         shadowColor: "#000",
-        shadowOpacity: 0.2,
+        shadowOpacity: isDark ? 0.45 : 0.15,
         shadowRadius: 12,
         elevation: 12,
+        borderWidth: isDark ? 1 : 0,
+        borderColor: colors.border,
       }}
     >
       {/* =====================================
@@ -164,7 +168,7 @@ function CustomTabBar({ state, navigation }: CustomTabBarProps) {
             <View style={{ alignItems: "center", position: "relative" }}>
               <Icon
                 size={isFocused ? 22 : 21}
-                color={isFocused ? "#FFFFFF" : "#8F827B"}
+                color={isFocused ? "#FFFFFF" : isDark ? "#8C7F78" : "#8F827B"}
                 strokeWidth={isFocused ? 2.6 : 1.8}
                 fill={
                   route.name === "saved" && isFocused
@@ -182,7 +186,7 @@ function CustomTabBar({ state, navigation }: CustomTabBarProps) {
                 fontWeight: isFocused ? "900" : "700",
                 letterSpacing: isFocused ? 0.5 : 0.25,
                 textTransform: "uppercase",
-                color: isFocused ? "#FFFFFF" : "#8F827B",
+                color: isFocused ? "#FFFFFF" : isDark ? "#8C7F78" : "#8F827B",
               }}
             >
               {config.label}
@@ -195,12 +199,14 @@ function CustomTabBar({ state, navigation }: CustomTabBarProps) {
 }
 
 export default function TabLayout() {
+  const { colors } = useTheme();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         animation: "fade",
-        sceneStyle: { backgroundColor: "#FAF7F3" },
+        sceneStyle: { backgroundColor: colors.background },
         tabBarStyle: { display: "none" },
       }}
       tabBar={(props) => <CustomTabBar {...props} />}

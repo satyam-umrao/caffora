@@ -20,6 +20,7 @@ import {
   getUserProfile,
   updateUserProfile,
 } from "../../src/services/firebase/users";
+import { useTheme } from "../../src/context/ThemeContext";
 
 const AVATAR_PRESETS = [
   "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
@@ -30,6 +31,7 @@ const AVATAR_PRESETS = [
 ];
 
 export default function EditProfileScreen() {
+  const { colors, isDark } = useTheme();
   const currentUser = auth.currentUser;
 
   const [displayName, setDisplayName] = useState("");
@@ -107,40 +109,66 @@ export default function EditProfileScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-[#FAF7F3]">
-        <ActivityIndicator size="large" color="#B95E2E" />
+      <SafeAreaView
+        style={{ backgroundColor: colors.background }}
+        className="flex-1 items-center justify-center"
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderBottomColor: colors.border,
+          }}
+          className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+        >
           <Pressable
             onPress={() => router.back()}
-            className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+            style={{ backgroundColor: colors.cardAlt }}
+            className="h-10 w-10 items-center justify-center rounded-full"
           >
-            <Ionicons name="chevron-back" size={22} color="#241C18" />
+            <Ionicons name="chevron-back" size={22} color={colors.text} />
           </Pressable>
 
-          <Text className="text-base font-extrabold text-[#241C18]">
+          <Text
+            style={{ color: colors.text }}
+            className="text-base font-extrabold"
+          >
             Edit Profile
           </Text>
 
           <Pressable
             onPress={handleSave}
             disabled={saving}
-            className="h-10 items-center justify-center rounded-full bg-[#FAF3EE] px-4 border border-[#F2D7CA]"
+            style={{
+              backgroundColor: colors.chip,
+              borderColor: colors.border,
+            }}
+            className="h-10 items-center justify-center rounded-full px-4 border"
           >
             {saving ? (
-              <ActivityIndicator size="small" color="#B95E2E" />
+              <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Text className="text-xs font-extrabold text-[#B95E2E]">Save</Text>
+              <Text
+                style={{ color: colors.primary }}
+                className="text-xs font-extrabold"
+              >
+                Save
+              </Text>
             )}
           </Pressable>
         </View>
@@ -159,14 +187,27 @@ export default function EditProfileScreen() {
                     photoURL ||
                     "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300",
                 }}
-                className="h-24 w-24 rounded-full border-2 border-[#B95E2E] bg-[#EADFD7]"
+                style={{
+                  borderColor: colors.primary,
+                  backgroundColor: colors.cardAlt,
+                }}
+                className="h-24 w-24 rounded-full border-2"
               />
-              <View className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full bg-[#B95E2E] border-2 border-white">
+              <View
+                style={{
+                  backgroundColor: colors.primary,
+                  borderColor: colors.surface,
+                }}
+                className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full border-2"
+              >
                 <Ionicons name="sparkles" size={14} color="#FFFFFF" />
               </View>
             </View>
 
-            <Text className="mt-3 text-xs font-bold text-[#8A7D75]">
+            <Text
+              style={{ color: colors.muted }}
+              className="mt-3 text-xs font-bold"
+            >
               Select an Avatar
             </Text>
 
@@ -195,16 +236,26 @@ export default function EditProfileScreen() {
           <View className="gap-4">
             {/* Full Name */}
             <View>
-              <Text className="mb-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-xs font-bold"
+              >
                 Full Name
               </Text>
-              <View className="h-14 rounded-2xl border border-[#EEE5DE] bg-white px-4 justify-center">
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                }}
+                className="h-14 rounded-2xl border px-4 justify-center"
+              >
                 <TextInput
                   value={displayName}
                   onChangeText={setDisplayName}
                   placeholder="Your full name"
-                  placeholderTextColor="#9E928A"
-                  className="text-sm font-semibold text-[#241C18]"
+                  placeholderTextColor={colors.muted}
+                  style={{ color: colors.text }}
+                  className="text-sm font-semibold"
                 />
               </View>
             </View>
@@ -212,18 +263,33 @@ export default function EditProfileScreen() {
             {/* Email (Read Only) */}
             <View>
               <View className="flex-row justify-between items-center mb-1.5">
-                <Text className="text-xs font-bold text-[#302720]">
+                <Text
+                  style={{ color: colors.text }}
+                  className="text-xs font-bold"
+                >
                   Email Address
                 </Text>
                 <View className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={12} color="#3FB950" />
-                  <Text className="ml-1 text-[10px] font-bold text-[#2E7A3A]">
+                  <Text
+                    style={{ color: isDark ? "#4ADE80" : "#2E7A3A" }}
+                    className="ml-1 text-[10px] font-bold"
+                  >
                     Verified
                   </Text>
                 </View>
               </View>
-              <View className="h-14 rounded-2xl border border-[#EBE4DC] bg-[#F7F2ED] px-4 justify-center">
-                <Text className="text-sm font-medium text-[#786B63]">
+              <View
+                style={{
+                  backgroundColor: colors.cardAlt,
+                  borderColor: colors.border,
+                }}
+                className="h-14 rounded-2xl border px-4 justify-center"
+              >
+                <Text
+                  style={{ color: colors.muted }}
+                  className="text-sm font-medium"
+                >
                   {currentUser?.email || "No email"}
                 </Text>
               </View>
@@ -231,51 +297,81 @@ export default function EditProfileScreen() {
 
             {/* Phone */}
             <View>
-              <Text className="mb-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-xs font-bold"
+              >
                 Phone Number
               </Text>
-              <View className="h-14 rounded-2xl border border-[#EEE5DE] bg-white px-4 justify-center">
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                }}
+                className="h-14 rounded-2xl border px-4 justify-center"
+              >
                 <TextInput
                   value={phoneNumber}
                   onChangeText={setPhoneNumber}
                   placeholder="+91 98765 43210"
-                  placeholderTextColor="#9E928A"
+                  placeholderTextColor={colors.muted}
                   keyboardType="phone-pad"
-                  className="text-sm font-semibold text-[#241C18]"
+                  style={{ color: colors.text }}
+                  className="text-sm font-semibold"
                 />
               </View>
             </View>
 
             {/* City */}
             <View>
-              <Text className="mb-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-xs font-bold"
+              >
                 City / Location
               </Text>
-              <View className="h-14 rounded-2xl border border-[#EEE5DE] bg-white px-4 justify-center">
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                }}
+                className="h-14 rounded-2xl border px-4 justify-center"
+              >
                 <TextInput
                   value={city}
                   onChangeText={setCity}
                   placeholder="E.g. New Delhi, South Extension"
-                  placeholderTextColor="#9E928A"
-                  className="text-sm font-semibold text-[#241C18]"
+                  placeholderTextColor={colors.muted}
+                  style={{ color: colors.text }}
+                  className="text-sm font-semibold"
                 />
               </View>
             </View>
 
             {/* Bio / Favorite Coffee */}
             <View>
-              <Text className="mb-1.5 text-xs font-bold text-[#302720]">
+              <Text
+                style={{ color: colors.text }}
+                className="mb-1.5 text-xs font-bold"
+              >
                 About You / Coffee Vibe
               </Text>
-              <View className="rounded-2xl border border-[#EEE5DE] bg-white p-3.5">
+              <View
+                style={{
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                }}
+                className="rounded-2xl border p-3.5"
+              >
                 <TextInput
                   value={bio}
                   onChangeText={setBio}
                   placeholder="I love specialty pour-overs, cozy aesthetics, and quiet cafes for work..."
-                  placeholderTextColor="#9E928A"
+                  placeholderTextColor={colors.muted}
                   multiline
                   numberOfLines={3}
-                  className="text-xs text-[#241C18]"
+                  style={{ color: colors.text }}
+                  className="text-xs"
                 />
               </View>
             </View>
@@ -283,7 +379,13 @@ export default function EditProfileScreen() {
 
           {/* Error Message */}
           {error ? (
-            <View className="mt-4 rounded-xl bg-[#FDEAE8] p-3 border border-[#F8C8C4]">
+            <View
+              style={{
+                backgroundColor: isDark ? "#381816" : "#FDEAE8",
+                borderColor: isDark ? "#5C2622" : "#F8C8C4",
+              }}
+              className="mt-4 rounded-xl p-3 border"
+            >
               <Text className="text-xs font-bold text-[#D95445] text-center">
                 {error}
               </Text>
@@ -294,7 +396,8 @@ export default function EditProfileScreen() {
           <Pressable
             onPress={handleSave}
             disabled={saving}
-            className={`mt-8 h-14 items-center justify-center rounded-2xl bg-[#B95E2E] ${
+            style={{ backgroundColor: colors.primary }}
+            className={`mt-8 h-14 items-center justify-center rounded-2xl ${
               saving ? "opacity-70" : ""
             }`}
           >

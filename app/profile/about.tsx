@@ -10,8 +10,10 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../src/context/ThemeContext";
 
 export default function AboutScreen() {
+  const { colors } = useTheme();
   const showTermsModal = () => {
     Alert.alert(
       "Terms & Conditions",
@@ -29,17 +31,31 @@ export default function AboutScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ backgroundColor: colors.background }}
+      className="flex-1"
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          backgroundColor: colors.surface,
+          borderBottomColor: colors.border,
+        }}
+        className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b"
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{ backgroundColor: colors.cardAlt }}
+          className="h-10 w-10 items-center justify-center rounded-full"
         >
-          <Ionicons name="chevron-back" size={22} color="#241C18" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text className="text-base font-extrabold text-[#241C18]">
+        <Text
+          style={{ color: colors.text }}
+          className="text-base font-extrabold"
+        >
           About Caffora
         </Text>
 
@@ -52,75 +68,146 @@ export default function AboutScreen() {
       >
         {/* Brand Banner */}
         <View className="items-center py-8">
-          <View className="h-20 w-20 items-center justify-center rounded-3xl bg-[#B95E2E]">
+          <View
+            style={{ backgroundColor: colors.primary }}
+            className="h-20 w-20 items-center justify-center rounded-3xl"
+          >
             <Text className="text-3xl">☕</Text>
           </View>
 
-          <Text className="mt-4 text-2xl font-black text-[#241C18]">
+          <Text
+            style={{ color: colors.text }}
+            className="mt-4 text-2xl font-black"
+          >
             Caffora
           </Text>
 
-          <Text className="mt-1 text-xs font-extrabold uppercase tracking-widest text-[#B95E2E]">
+          <Text
+            style={{ color: colors.primary }}
+            className="mt-1 text-xs font-extrabold uppercase tracking-widest"
+          >
             Discover • Book • Enjoy
           </Text>
 
-          <View className="mt-2.5 rounded-full bg-[#FAF3EE] px-3.5 py-1 border border-[#F2D7CA]">
-            <Text className="text-[11px] font-bold text-[#8A7D75]">
+          <View
+            style={{
+              backgroundColor: colors.chip,
+              borderColor: colors.border,
+            }}
+            className="mt-2.5 rounded-full px-3.5 py-1 border"
+          >
+            <Text
+              style={{ color: colors.muted }}
+              className="text-[11px] font-bold"
+            >
               Version 1.0.0 (Build 54)
             </Text>
           </View>
         </View>
 
         {/* Mission / Story */}
-        <View className="rounded-2xl border border-[#EEE5DE] bg-white p-5">
-          <Text className="text-sm font-black text-[#241C18]">Our Mission</Text>
-          <Text className="mt-2 text-xs leading-relaxed text-[#5E514A]">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
+          className="rounded-2xl border p-5"
+        >
+          <Text
+            style={{ color: colors.text }}
+            className="text-sm font-black"
+          >
+            Our Mission
+          </Text>
+          <Text
+            style={{ color: colors.textSecondary }}
+            className="mt-2 text-xs leading-relaxed"
+          >
             Caffora was built for coffee lovers, remote creators, and café
-            {"enthusiasts. We believe finding the perfect coffee spot shouldn't be"}
-            {"a chore—whether you're looking for specialty single-origins, cozy"}
-            study corners, or lively brunch spots.
+            {" enthusiasts. We believe finding the perfect coffee spot shouldn't be"}
+            {" a chore—whether you're looking for specialty single-origins, cozy"}
+            {" study corners, or lively brunch spots."}
           </Text>
         </View>
 
         {/* Feature Highlights */}
-        <View className="mt-5 rounded-2xl border border-[#EEE5DE] bg-white p-5 gap-4">
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          }}
+          className="mt-5 rounded-2xl border p-5 gap-4"
+        >
           <View className="flex-row items-center">
-            <View className="h-9 w-9 items-center justify-center rounded-xl bg-[#FAF3EE]">
-              <Ionicons name="sparkles" size={18} color="#B95E2E" />
+            <View
+              style={{ backgroundColor: colors.chip }}
+              className="h-9 w-9 items-center justify-center rounded-xl"
+            >
+              <Ionicons name="sparkles" size={18} color={colors.primary} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Handpicked Cafés
               </Text>
-              <Text className="text-[11px] text-[#8A7D75]">
+              <Text
+                style={{ color: colors.muted }}
+                className="text-[11px]"
+              >
                 Curated atmospheres, specialty roasters & artisan food
               </Text>
             </View>
           </View>
 
-          <View className="flex-row items-center border-t border-[#F2ECE7] pt-3">
-            <View className="h-9 w-9 items-center justify-center rounded-xl bg-[#FAF3EE]">
-              <Ionicons name="calendar" size={18} color="#B95E2E" />
+          <View
+            style={{ borderTopColor: colors.border }}
+            className="flex-row items-center border-t pt-3"
+          >
+            <View
+              style={{ backgroundColor: colors.chip }}
+              className="h-9 w-9 items-center justify-center rounded-xl"
+            >
+              <Ionicons name="calendar" size={18} color={colors.primary} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Instant Table Reservations
               </Text>
-              <Text className="text-[11px] text-[#8A7D75]">
+              <Text
+                style={{ color: colors.muted }}
+                className="text-[11px]"
+              >
                 Reserve tables effortlessly with zero booking fees
               </Text>
             </View>
           </View>
 
-          <View className="flex-row items-center border-t border-[#F2ECE7] pt-3">
-            <View className="h-9 w-9 items-center justify-center rounded-xl bg-[#FAF3EE]">
-              <Ionicons name="heart" size={18} color="#B95E2E" />
+          <View
+            style={{ borderTopColor: colors.border }}
+            className="flex-row items-center border-t pt-3"
+          >
+            <View
+              style={{ backgroundColor: colors.chip }}
+              className="h-9 w-9 items-center justify-center rounded-xl"
+            >
+              <Ionicons name="heart" size={18} color={colors.primary} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Community Reviews
               </Text>
-              <Text className="text-[11px] text-[#8A7D75]">
+              <Text
+                style={{ color: colors.muted }}
+                className="text-[11px]"
+              >
                 Real feedback by coffee lovers for coffee lovers
               </Text>
             </View>
@@ -129,29 +216,45 @@ export default function AboutScreen() {
 
         {/* Legal & Terms */}
         <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider"
+          >
             Legal & Compliance
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
+          <View
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.border,
+            }}
+            className="rounded-2xl border overflow-hidden"
+          >
             <Pressable
               onPress={showTermsModal}
               className="flex-row items-center justify-between p-4"
             >
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Terms of Service
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#B7ABA3" />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </Pressable>
 
             <Pressable
               onPress={showPrivacyPolicy}
+              style={{ borderTopWidth: 1, borderTopColor: colors.border }}
               className="flex-row items-center justify-between p-4"
             >
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Privacy Policy
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#B7ABA3" />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </Pressable>
 
             <Pressable
@@ -161,22 +264,32 @@ export default function AboutScreen() {
                   "Caffora is powered by React Native, Expo, and Firebase. All third-party libraries are used under permissive licenses (MIT / Apache-2.0).",
                 )
               }
+              style={{ borderTopWidth: 1, borderTopColor: colors.border }}
               className="flex-row items-center justify-between p-4"
             >
-              <Text className="text-xs font-bold text-[#241C18]">
+              <Text
+                style={{ color: colors.text }}
+                className="text-xs font-bold"
+              >
                 Open Source Licenses
               </Text>
-              <Ionicons name="chevron-forward" size={16} color="#B7ABA3" />
+              <Ionicons name="chevron-forward" size={16} color={colors.muted} />
             </Pressable>
           </View>
         </View>
 
         {/* Footer info */}
         <View className="mt-10 items-center">
-          <Text className="text-xs font-semibold text-[#8A7D75]">
+          <Text
+            style={{ color: colors.muted }}
+            className="text-xs font-semibold"
+          >
             Made with ❤️ for coffee lovers
           </Text>
-          <Text className="mt-1 text-[10px] text-[#A99D95]">
+          <Text
+            style={{ color: colors.muted }}
+            className="mt-1 text-[10px]"
+          >
             © {new Date().getFullYear()} Caffora Inc. All rights reserved.
           </Text>
         </View>

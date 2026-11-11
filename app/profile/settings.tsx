@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useTheme, ThemeMode } from "../../src/context/ThemeContext";
 import { logout, resetPassword } from "../../src/services/firebase/auth";
 import { auth } from "../../src/services/firebase/config";
 import {
@@ -23,11 +23,12 @@ import type { UserPreferences } from "../../src/types/profile";
 
 export default function SettingsScreen() {
   const currentUser = auth.currentUser;
+  const { colors, isDark, themeMode, setThemeMode } = useTheme();
 
   const [preferences, setPreferences] =
     useState<UserPreferences>(DEFAULT_PREFERENCES);
-  const [loading, setLoading] = useState(true);
-  const [savingPref, setSavingPref] = useState(false);
+  const [, setLoading] = useState(true);
+  const [, setSavingPref] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -40,6 +41,9 @@ export default function SettingsScreen() {
         const profile = await getUserProfile(currentUser.uid);
         if (profile?.preferences) {
           setPreferences(profile.preferences);
+          if (profile.preferences.theme && profile.preferences.theme !== themeMode) {
+            setThemeMode(profile.preferences.theme);
+          }
         }
       } catch (err) {
         console.error("Load settings error:", err);
@@ -66,6 +70,17 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSelectTheme = async (mode: ThemeMode) => {
+    await setThemeMode(mode);
+    if (currentUser) {
+      try {
+        await updateUserPreferences(currentUser.uid, { theme: mode });
+      } catch (err) {
+        console.error("Failed to sync theme preference:", err);
+      }
+    }
+  };
+
   const handlePasswordReset = async () => {
     if (!currentUser?.email) return;
 
@@ -83,7 +98,7 @@ export default function SettingsScreen() {
                 "Email Sent",
                 "Please check your inbox for instructions to reset your password.",
               );
-            } catch (err) {
+            } catch {
               Alert.alert("Error", "Could not send password reset email.");
             }
           },
@@ -111,79 +126,360 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FAF7F3]" edges={["top"]}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: colors.background }}
+      edges={["top"]}
+    >
       {/* Header */}
-      <View className="flex-row items-center justify-between px-5 pb-3 pt-2 border-b border-[#EEE5DE] bg-white">
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingHorizontal: 20,
+          paddingBottom: 12,
+          paddingTop: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+          backgroundColor: colors.surface,
+        }}
+      >
         <Pressable
           onPress={() => router.back()}
-          className="h-10 w-10 items-center justify-center rounded-full bg-[#FAF7F3]"
+          style={{
+            height: 40,
+            width: 40,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 20,
+            backgroundColor: colors.surfaceMuted,
+          }}
         >
-          <Ionicons name="chevron-back" size={22} color="#241C18" />
+          <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
 
-        <Text className="text-base font-extrabold text-[#241C18]">Settings</Text>
+        <Text
+          style={{
+            fontSize: 16,
+            fontWeight: "800",
+            color: colors.text,
+          }}
+        >
+          Settings
+        </Text>
 
-        <View className="w-10" />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}
       >
+        {/* Section: Appearance / Theme */}
+        <View style={{ marginTop: 24 }}>
+          <Text
+            style={{
+              marginBottom: 10,
+              marginLeft: 4,
+              fontSize: 12,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: colors.textSecondary,
+            }}
+          >
+            Appearance
+          </Text>
+
+          <View
+            style={{
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              padding: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "700",
+                color: colors.text,
+                marginBottom: 4,
+              }}
+            >
+              Theme Mode
+            </Text>
+            <Text
+              style={{
+                fontSize: 12,
+                color: colors.textSecondary,
+                marginBottom: 16,
+              }}
+            >
+              Choose how Caffora appears to you
+            </Text>
+
+            {/* 3 Theme Options */}
+            <View
+              style={{
+                flexDirection: "row",
+                gap: 10,
+              }}
+            >
+              {/* System Option */}
+              <Pressable
+                onPress={() => handleSelectTheme("system")}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  borderRadius: 14,
+                  borderWidth: 2,
+                  borderColor:
+                    themeMode === "system" ? colors.primary : colors.border,
+                  backgroundColor:
+                    themeMode === "system"
+                      ? colors.primarySoft
+                      : colors.surfaceMuted,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="phone-portrait-outline"
+                  size={22}
+                  color={
+                    themeMode === "system" ? colors.primary : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={{
+                    marginTop: 6,
+                    fontSize: 12,
+                    fontWeight: themeMode === "system" ? "800" : "600",
+                    color:
+                      themeMode === "system" ? colors.primary : colors.text,
+                  }}
+                >
+                  System
+                </Text>
+              </Pressable>
+
+              {/* Light Option */}
+              <Pressable
+                onPress={() => handleSelectTheme("light")}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  borderRadius: 14,
+                  borderWidth: 2,
+                  borderColor:
+                    themeMode === "light" ? colors.primary : colors.border,
+                  backgroundColor:
+                    themeMode === "light"
+                      ? colors.primarySoft
+                      : colors.surfaceMuted,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="sunny-outline"
+                  size={22}
+                  color={
+                    themeMode === "light" ? colors.primary : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={{
+                    marginTop: 6,
+                    fontSize: 12,
+                    fontWeight: themeMode === "light" ? "800" : "600",
+                    color:
+                      themeMode === "light" ? colors.primary : colors.text,
+                  }}
+                >
+                  Light
+                </Text>
+              </Pressable>
+
+              {/* Dark Option */}
+              <Pressable
+                onPress={() => handleSelectTheme("dark")}
+                style={{
+                  flex: 1,
+                  paddingVertical: 14,
+                  paddingHorizontal: 8,
+                  borderRadius: 14,
+                  borderWidth: 2,
+                  borderColor:
+                    themeMode === "dark" ? colors.primary : colors.border,
+                  backgroundColor:
+                    themeMode === "dark"
+                      ? colors.primarySoft
+                      : colors.surfaceMuted,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Ionicons
+                  name="moon-outline"
+                  size={22}
+                  color={
+                    themeMode === "dark" ? colors.primary : colors.textSecondary
+                  }
+                />
+                <Text
+                  style={{
+                    marginTop: 6,
+                    fontSize: 12,
+                    fontWeight: themeMode === "dark" ? "800" : "600",
+                    color:
+                      themeMode === "dark" ? colors.primary : colors.text,
+                  }}
+                >
+                  Dark
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
         {/* Section: Notifications */}
-        <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+        <View style={{ marginTop: 24 }}>
+          <Text
+            style={{
+              marginBottom: 10,
+              marginLeft: 4,
+              fontSize: 12,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: colors.textSecondary,
+            }}
+          >
             Notifications
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+          <View
+            style={{
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              overflow: "hidden",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderMuted,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Push Notifications
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Receive updates about your reservations and account
                 </Text>
               </View>
               <Switch
                 value={preferences.notifications}
                 onValueChange={(val) => togglePref("notifications", val)}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{ false: isDark ? "#382C24" : "#E0D7D0", true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderMuted,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Booking Reminders
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Get reminded 2 hours before your café reservations
                 </Text>
               </View>
               <Switch
                 value={preferences.bookingReminders}
                 onValueChange={(val) => togglePref("bookingReminders", val)}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{ false: isDark ? "#382C24" : "#E0D7D0", true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Café Recommendations
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Receive curated café suggestions based on your tastes
                 </Text>
               </View>
               <Switch
                 value={preferences.promotions}
                 onValueChange={(val) => togglePref("promotions", val)}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{ false: isDark ? "#382C24" : "#E0D7D0", true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -191,42 +487,100 @@ export default function SettingsScreen() {
         </View>
 
         {/* Section: Preferences */}
-        <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+        <View style={{ marginTop: 24 }}>
+          <Text
+            style={{
+              marginBottom: 10,
+              marginLeft: 4,
+              fontSize: 12,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: colors.textSecondary,
+            }}
+          >
             App Preferences
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+          <View
+            style={{
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              overflow: "hidden",
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderMuted,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Location Services
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Used to discover cafés near your current spot
                 </Text>
               </View>
               <Switch
                 value={preferences.locationServices}
                 onValueChange={(val) => togglePref("locationServices", val)}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{ false: isDark ? "#382C24" : "#E0D7D0", true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
-            <View className="flex-row items-center justify-between p-4">
-              <View className="flex-1 pr-3">
-                <Text className="text-sm font-bold text-[#241C18]">
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+              }}
+            >
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Haptic Feedback
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Subtle vibration feedback on buttons and booking actions
                 </Text>
               </View>
               <Switch
                 value={preferences.hapticFeedback}
                 onValueChange={(val) => togglePref("hapticFeedback", val)}
-                trackColor={{ false: "#E0D7D0", true: "#B95E2E" }}
+                trackColor={{ false: isDark ? "#382C24" : "#E0D7D0", true: colors.primary }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -234,52 +588,122 @@ export default function SettingsScreen() {
         </View>
 
         {/* Section: Account & Security */}
-        <View className="mt-6">
-          <Text className="mb-2.5 ml-1 text-xs font-bold uppercase tracking-wider text-[#93867E]">
+        <View style={{ marginTop: 24 }}>
+          <Text
+            style={{
+              marginBottom: 10,
+              marginLeft: 4,
+              fontSize: 12,
+              fontWeight: "700",
+              textTransform: "uppercase",
+              letterSpacing: 0.8,
+              color: colors.textSecondary,
+            }}
+          >
             Account Security
           </Text>
 
-          <View className="rounded-2xl border border-[#EEE5DE] bg-white divide-y divide-[#F2ECE7] overflow-hidden">
+          <View
+            style={{
+              borderRadius: 20,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surface,
+              overflow: "hidden",
+            }}
+          >
             <Pressable
               onPress={handlePasswordReset}
-              className="flex-row items-center justify-between p-4"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.borderMuted,
+              }}
             >
               <View>
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Change Password
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Send password reset link to your email
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#B7ABA3" />
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
 
             <Pressable
               onPress={handleClearCache}
-              className="flex-row items-center justify-between p-4"
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: 16,
+              }}
             >
               <View>
-                <Text className="text-sm font-bold text-[#241C18]">
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "700",
+                    color: colors.text,
+                  }}
+                >
                   Clear Cache
                 </Text>
-                <Text className="text-xs text-[#8A7D75]">
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: colors.textSecondary,
+                    marginTop: 2,
+                  }}
+                >
                   Free up local storage space
                 </Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color="#B7ABA3" />
+              <Ionicons name="chevron-forward" size={18} color={colors.muted} />
             </Pressable>
           </View>
         </View>
 
         {/* Section: Account Actions */}
-        <View className="mt-8 gap-3">
+        <View style={{ marginTop: 32, gap: 12 }}>
           <Pressable
             onPress={handleLogout}
-            className="h-14 flex-row items-center justify-center rounded-2xl border border-[#F6D7D5] bg-[#FFF8F7]"
+            style={{
+              height: 56,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: isDark ? "#4A1D1C" : "#F6D7D5",
+              backgroundColor: colors.dangerSoft,
+            }}
           >
-            <Ionicons name="log-out-outline" size={20} color="#E0524D" />
-            <Text className="ml-2.5 text-sm font-extrabold text-[#E0524D]">
+            <Ionicons name="log-out-outline" size={20} color={colors.danger} />
+            <Text
+              style={{
+                marginLeft: 10,
+                fontSize: 14,
+                fontWeight: "800",
+                color: colors.danger,
+              }}
+            >
               Sign Out
             </Text>
           </Pressable>

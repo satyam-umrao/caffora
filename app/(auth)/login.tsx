@@ -9,18 +9,18 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useColorScheme,
   View,
 } from "react-native";
 
+import { useTheme } from "../../src/context/ThemeContext";
 import {
   checkEmailVerification,
   signIn,
 } from "../../src/services/firebase/auth";
+import { getUserProfile } from "../../src/services/firebase/users";
 
 export default function LoginScreen() {
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+  const { colors, isDark } = useTheme();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,11 +28,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const bg = "#FAF8F5";
-  const text = "#1D1815";
-  const secondary = "#776B64";
-  const inputBg = "#FFFFFF";
-  const border = "#E5DFDA";
+  const bg = colors.background;
+  const text = colors.text;
+  const secondary = colors.textSecondary;
+  const primary = colors.primary;
+  const inputBg = colors.inputBackground;
+  const border = colors.border;
 
   const handleLogin = async () => {
     setError("");
@@ -65,7 +66,15 @@ export default function LoginScreen() {
         return;
       }
 
-      router.replace("/(tabs)");
+      // Fetch user role from Firestore to route to the correct portal
+      const profile = await getUserProfile(credential.user.uid);
+      const role = profile?.role ?? "customer";
+
+      if (role === "cafe_owner") {
+        router.replace("/(owner)/dashboard");
+      } else {
+        router.replace("/(tabs)");
+      }
     } catch (err: any) {
       switch (err?.code) {
         case "auth/invalid-credential":
@@ -154,20 +163,20 @@ export default function LoginScreen() {
               />
 
               <Pressable onPress={() => setShowPassword((v) => !v)}>
-                <Text style={styles.show}>
+                <Text style={[styles.show, { color: primary }]}>
                   {showPassword ? "Hide" : "Show"}
                 </Text>
               </Pressable>
             </View>
 
             <Pressable onPress={() => router.push("/forgot-password")}>
-              <Text style={styles.forgot}>Forgot password?</Text>
+              <Text style={[styles.forgot, { color: primary }]}>Forgot password?</Text>
             </Pressable>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <Pressable
-              style={styles.button}
+              style={[styles.button, { backgroundColor: primary }]}
               onPress={handleLogin}
               disabled={loading}
             >
@@ -184,8 +193,8 @@ export default function LoginScreen() {
               {"Don't have an account?"}
             </Text>
 
-            <Pressable onPress={() => router.replace("/signup")}>
-              <Text style={styles.signup}>Sign Up </Text>
+            <Pressable onPress={() => router.push("/(auth)/register-select")}>
+              <Text style={[styles.signup, { color: primary }]}>Sign Up </Text>
             </Pressable>
           </View>
         </View>

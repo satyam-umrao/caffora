@@ -11,7 +11,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 
-import { auth, db } from "./config";
+import { db } from "./config";
 import type { AppNotification, SupportTicket } from "../../types/database";
 
 function mapNotification(id: string, data: Record<string, any>): AppNotification {

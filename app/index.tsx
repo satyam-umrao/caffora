@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { auth } from "../src/services/firebase/config";
+import { getUserProfile } from "../src/services/firebase/users";
 
 const SPLASH_IMAGE =
   "https://plus.unsplash.com/premium_photo-1673545518947-ddf3240090b1?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8Y2FmZXxlbnwwfHwwfHx8MA%3D%3D";
@@ -39,10 +40,19 @@ export default function Index() {
 
     let timer: ReturnType<typeof setTimeout> | undefined;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      timer = setTimeout(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      timer = setTimeout(async () => {
         if (user) {
           if (user.emailVerified) {
+            try {
+              const profile = await getUserProfile(user.uid);
+              if (profile?.role === "cafe_owner") {
+                router.replace("/(owner)/dashboard");
+                return;
+              }
+            } catch (err) {
+              console.warn("Could not fetch user profile on start:", err);
+            }
             router.replace("/(tabs)");
           } else {
             router.replace("/(auth)/verify-email");

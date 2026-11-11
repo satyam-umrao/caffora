@@ -13,6 +13,7 @@
     "android": {
       "package": "com.caffora.app",
       "googleServicesFile": "./google-services.json",
+      "backgroundColor": "#FAF7F3",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/ios-icon-default.png",
@@ -47,9 +48,7 @@
     },
     "extra": {
       "router": {},
-      "eas": {
-        "projectId": "your project id"
-      }
+      "eas": {}
     }
   }
 }
