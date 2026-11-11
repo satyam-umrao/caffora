@@ -34,6 +34,7 @@ yarn-error.*
 .env
 .env.*
 !.env.example
+eas.json
 
 # typescript
 *.tsbuildinfo
