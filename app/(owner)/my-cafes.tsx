@@ -246,7 +246,6 @@ export default function MyCafesScreen() {
                   styles.cafeCard,
                   {
                     backgroundColor: colors.surface,
-                    borderColor: colors.border,
                     opacity: isListingActive ? 1 : 0.75,
                   },
                 ]}
@@ -649,8 +648,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   cafeCard: {
-    borderRadius: 16,
-    borderWidth: 1,
+    borderRadius: 22,
+    borderWidth: 0,
     marginBottom: 16,
     overflow: "hidden",
   },
